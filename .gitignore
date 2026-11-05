@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 环境与密钥
+.env
+*.key
+.credentials*
+
+# DSH 与本地配置
+.dsh/
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 运行产物（如不希望纳入版本管理，可取消注释）
+# report.md
