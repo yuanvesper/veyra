@@ -84,12 +84,16 @@ INJECTION_PATTERNS = [
     "you are now a",
 ]
 
-# 类名标题行：例如 java.lang.NullPointerException、java.lang.OutOfMemoryError
+# 异常标题：例如 java.lang.NullPointerException、java.lang.OutOfMemoryError。
+# 类名后只允许是冒号 + 消息或行尾，避免把 "Exception message: ..." 这类说明行误判成标题。
 EXCEPTION_HEADER_RE = re.compile(
-    r"^(?:[A-Za-z_$][\w$]*\.)*[A-Za-z_$][\w$]*(?:Exception|Error)\b"
+    r"^(?:[A-Za-z_$][\w$]*\.)*[A-Za-z_$][\w$]*(?:Exception|Error)(?::\s*.*)?$"
 )
+# Java 标准输出常见的 "Exception in thread "main" java.lang.NullPointerException" 前缀
+THREAD_PREFIX_RE = re.compile(r'^Exception in thread "[^"]*"\s+(.+)$')
 FATAL_RE = re.compile(r"^Fatal\b", re.IGNORECASE)
-CAUSED_BY_RE = re.compile(r"^Caused by:\s*(.+)$")
+# NeoForge 的多 Mod 崩溃报告使用 "Caused by 0:"、"Caused by 1:" 这样的编号形式
+CAUSED_BY_RE = re.compile(r"^Caused by(?:\s+\d+)?:\s*(.+)$")
 SUPPRESSED_RE = re.compile(r"^Suppressed:\s*(.+)$")
 # 堆栈行："    at xxx(...)" 或 "... 12 more"
 STACK_LINE_RE = re.compile(r"^\s+at\s|^\s*\.\.\.\s+\d+\s+more\s*$")
@@ -162,8 +166,19 @@ def _is_suspicious_line(line):
 
 
 def _is_exception_header(stripped):
-    """判断一行是否为新异常块的标题行。"""
-    return bool(EXCEPTION_HEADER_RE.match(stripped) or FATAL_RE.match(stripped))
+    """判断一行是否为新异常块的标题行。
+
+    支持两种常见写法：
+    - java.lang.NullPointerException: message
+    - Exception in thread "main" java.lang.NullPointerException: message
+    """
+    if FATAL_RE.match(stripped):
+        return True
+    candidate = stripped
+    thread_match = THREAD_PREFIX_RE.match(candidate)
+    if thread_match:
+        candidate = thread_match.group(1)
+    return bool(EXCEPTION_HEADER_RE.match(candidate))
 
 
 def _truncate_block(block):
@@ -453,9 +468,22 @@ def call_model(messages):
 # ---------------------------------------------------------------------------
 
 def _simple_class_name(content):
-    """从异常标题中提取简单类名，例如 NullPointerException。"""
-    match = re.search(r"\b([A-Za-z_$][\w$]*(?:Exception|Error))\b", content)
-    return match.group(1) if match else "未知异常"
+    """从异常标题中提取简单类名，例如 NullPointerException。
+
+    兼容 "Exception in thread "main" java.lang.NullPointerException" 前缀，
+    并去掉包名与内部类前缀（如 CrashReportExtender$ModLoadingCrashException）。
+    """
+    text = content.strip()
+    thread_match = THREAD_PREFIX_RE.match(text)
+    if thread_match:
+        text = thread_match.group(1)
+    match = re.search(
+        r"([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*(?:Exception|Error))\b",
+        text,
+    )
+    if not match:
+        return "未知异常"
+    return match.group(1).rsplit(".", 1)[-1].rsplit("$", 1)[-1]
 
 
 def build_local_output(description, evidence_list, injection_detected):
