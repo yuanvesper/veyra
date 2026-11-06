@@ -62,9 +62,8 @@ The repository also contains an Agent Skill for conversation-side issue triage. 
 TRIAGE_LOCAL_MODE=1 python triage_agent.py demo/sample-crash.log
 ```
 
-<!-- 建议在 GitHub 网页端手动上传一张终端运行截图，并替换下方链接 -->
-> 📸 **Screenshot placeholder:**
-> `![Veyra CLI Demo](link-to-your-screenshot.png)`
+<img width="1280" height="765" alt="Screenshot 2026-11-07 000631" src="https://github.com/user-attachments/assets/a5741212-7dd2-46f6-a96d-3ad35aab6cf1" />
+
 
 > 💡 **Not set up yet? Want to see the output first?** Check the [Demo preview report](demo/expected-report-preview.md) — it is exactly what a local run produces.
 
