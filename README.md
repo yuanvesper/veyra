@@ -43,6 +43,8 @@ The DeepSeek API mode has only been tested a very small number of times. Connect
 
 ### Local mode (no API key, no network)
 
+Run the commands below **from the root of your cloned Veyra repository**. The `demo/sample-crash.log` argument is a path relative to that root; the same applies to the API-mode example further down.
+
 ```powershell
 # PowerShell
 $env:TRIAGE_LOCAL_MODE = "1"

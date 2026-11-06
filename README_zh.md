@@ -45,6 +45,8 @@ DeepSeek API 模式目前只经历过极少量测试，连接稳定性与返回�
 
 ### 本地模式（不调用 API、不联网）
 
+以下命令请**在克隆后的 Veyra 仓库根目录执行**。`demo/sample-crash.log` 是相对于仓库根目录的路径；下面的 API 模式示例同理。
+
 ```powershell
 # PowerShell
 $env:TRIAGE_LOCAL_MODE = "1"
