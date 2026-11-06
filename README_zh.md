@@ -3,11 +3,12 @@
   <p><b>Stop AI hallucinations in game crash logs. Extract real evidence, map exact line numbers.</b></p>
   <p><i>告别大模型瞎编报错，用 Python 约束 AI 真实提取游戏崩溃证据。</i></p>
 
-  ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-  ![License](https://img.shields.io/badge/license-MIT-green)
-  ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
-  ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
+  ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+  ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+  ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=for-the-badge)
 </div>
+
+[English](./README.md) | **简体中文**
 
 Veyra 是一个面向 Minecraft Mod 崩溃日志的本地命令行工具。它用 Python 从日志中提取异常证据、分配证据 ID，并渲染结构化 Markdown 问题报告。可选的 DeepSeek API 模式可以补全叙述字段，但模型只能引用 Python 提取出的证据 ID —— 报告中的行号由 Python 控制。
 
@@ -20,10 +21,10 @@ Veyra 是一个面向 Minecraft Mod 崩溃日志的本地命令行工具。它�
 | --- | --- |
 | [Why Veyra?](#why-veyra) | [为什么用 Veyra？](#why-veyra) |
 | [Important Notices](#notices) | [重要声明](#notices) |
-| [Features](#features) | [功能特性](#features) |
 | [Quick Start](#quick-start) | [快速开始](#quick-start) |
-| [Installing the Skill files](#install-skill) | [安装 Skill 文件](#install-skill) |
+| [Features](#features) | [功能特性](#features) |
 | [How it works](#how-it-works) | [工作原理](#how-it-works) |
+| [Installing the Skill files](#install-skill) | [安装 Skill 文件](#install-skill) |
 | [Limitations](#limitations) | [已知限制](#limitations) |
 | [Roadmap](#roadmap) | [路线图](#roadmap) |
 | [Contributing](#contributing) | [参与贡献](#contributing) |
@@ -52,19 +53,17 @@ Veyra 是一个面向 Minecraft Mod 崩溃日志的本地命令行工具。它�
 > [!CAUTION]
 > **API 模式稳定性。** DeepSeek API 模式目前只经历过极少量测试，连接稳定性与返回格式**不作保证**。本地模式不需要 API Key，也不需要网络。
 
-<a id="features"></a>
-## 🚀 Features / 功能特性
-
-- **无需 API Key 的本地模式**（`TRIAGE_LOCAL_MODE=1` 或未配置 `DEEPSEEK_API_KEY`）：读取日志、用正则提取证据、按规则生成 8 个字段、执行校验并写出 `report.md`。
-- **异常证据提取**：支持 Java 异常/错误标题行（`Exception` / `Error` / `Fatal`）、`at ...` 堆栈行、`... N more`、`Caused by:` 块（含 NeoForge 风格的 `Caused by 0:` / `Caused by 1:` 编号）、`Suppressed:` 块，以及 `Exception in thread "..."` 前缀。
-- **证据 ID 与行号映射**：Python 脚本提取证据并分配唯一 ID（如 E1、E2）。模型接收带有 ID 的提取证据，并被要求只引用这些有效 ID；最终报告中的行号由 Python 根据证据 ID 映射生成。
-- **提示词注入检测**：命中常见注入短语的行会被记录为 `suspicious_text` 证据，绝不会被执行。
-- **截断**：单个证据块最多保留 50 行堆栈，全部证据内容最多 50000 字符，截断时标记 `truncated` 与 `[已截断]`。
-- **渲染前校验**：检查 8 个必需字段；剔除不存在的证据 ID 并警告；对无法在证据中找到依据的环境值、确定性根因表述、文本字段中的行号引用分别给出警告。
-- **可选的 DeepSeek API 模式**：仅使用 Python 标准库调用 DeepSeek chat completions 接口，并针对认证失败、余额不足、限流、服务端错误、超时与网络错误给出明确处理。
-
 <a id="quick-start"></a>
 ## ⚡ Quick Start / 快速开始
+
+```bash
+# Local mode (no API key required)
+TRIAGE_LOCAL_MODE=1 python triage_agent.py demo/sample-crash.log
+```
+
+<!-- 建议在 GitHub 网页端手动上传一张终端运行截图，并替换下方链接 -->
+> 📸 **Screenshot placeholder:**
+> `![Veyra CLI Demo](link-to-your-screenshot.png)`
 
 > 💡 **还没配好环境？想先看效果？** 可以直接查看 [Demo 预览报告](demo/expected-report-preview.md)，这就是跑完一次会得到的结果。
 
@@ -115,6 +114,50 @@ python triage_agent.py demo/sample-crash.log
 
 CLI 没有选择输出路径的参数：报告文件名固定为工作目录下的 `report.md`。
 
+<a id="features"></a>
+## 🚀 Features / 功能特性
+
+- **无需 API Key 的本地模式**（`TRIAGE_LOCAL_MODE=1` 或未配置 `DEEPSEEK_API_KEY`）：读取日志、用正则提取证据、按规则生成 8 个字段、执行校验并写出 `report.md`。
+- **异常证据提取**：支持 Java 异常/错误标题行（`Exception` / `Error` / `Fatal`）、`at ...` 堆栈行、`... N more`、`Caused by:` 块（含 NeoForge 风格的 `Caused by 0:` / `Caused by 1:` 编号）、`Suppressed:` 块，以及 `Exception in thread "..."` 前缀。
+- **证据 ID 与行号映射**：Python 脚本提取证据并分配唯一 ID（如 E1、E2）。模型接收带有 ID 的提取证据，并被要求只引用这些有效 ID；最终报告中的行号由 Python 根据证据 ID 映射生成。
+- **提示词注入检测**：命中常见注入短语的行会被记录为 `suspicious_text` 证据，绝不会被执行。
+- **截断**：单个证据块最多保留 50 行堆栈，全部证据内容最多 50000 字符，截断时标记 `truncated` 与 `[已截断]`。
+- **渲染前校验**：检查 8 个必需字段；剔除不存在的证据 ID 并警告；对无法在证据中找到依据的环境值、确定性根因表述、文本字段中的行号引用分别给出警告。
+- **可选的 DeepSeek API 模式**：仅使用 Python 标准库调用 DeepSeek chat completions 接口，并针对认证失败、余额不足、限流、服务端错误、超时与网络错误给出明确处理。
+
+<a id="how-it-works"></a>
+## 🧠 How it works / 工作原理
+
+### Project structure / 项目结构
+
+```text
+veyra/
+├── triage_agent.py       # Python CLI entry point
+├── skills/               # Agent Skill files for DSH/Claude Code
+├── scripts/              # Secure installer scripts (PS1 / SH)
+├── demo/                 # Synthetic log and expected report
+├── docs/                 # Architecture and MVP docs
+└── README.md
+```
+
+```mermaid
+graph TD
+    A[Raw Crash Log] --> B[Python Regex Engine]
+    B --> C[Extract Evidence IDs]
+    C --> D[Send to DeepSeek AI]
+    D --> E[Cites Evidence IDs Only]
+    E --> F[Python Maps Real Line Numbers]
+    F --> G[Render report.md]
+```
+
+1. **读取日志**（`read_log`）：处理文件不存在、文件为空、无法解码的字节（用替换字符解码）。
+2. **提取证据**（`extract_evidence`）：逐行扫描日志，聚合异常块，记录真实行号，检测疑似注入文本，分配 `E1...` ID，并应用截断。
+3. **组装模型输入**（`build_messages`）或**本地规则输出**（`build_local_output`）：系统提示词要求模型只引用给定证据 ID、不编造行号、把日志文本当数据、不给出确定性根因、未知环境值一律用 `null`。
+4. **校验**（`validate_output`）：确认 8 个字段，过滤未知证据 ID，并对可疑内容给出警告。
+5. **渲染**（`render_report`）：写出 `report.md`；证据小节中的每一处行号都来自 Python 的证据表，而不是模型。
+
+8 个字段为：`issue_title`、`symptoms`、`environment`、`reproduction_steps`、`missing_information`、`current_assessment`、`evidence_refs`、`disclaimer`。
+
 <a id="install-skill"></a>
 ## 📦 Installing the Skill files (optional) / 安装 Skill 文件（可选）
 
@@ -135,27 +178,6 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 ```
 
 `-Destination` / `--dest` 必须是已存在父目录的绝对路径；相对路径和包含 `..` 的路径会被拒绝。Windows 默认的 PowerShell 执行策略可能阻止运行本地脚本：对本次调用使用 `-ExecutionPolicy Bypass` 即可，不要修改系统级策略。请只对你自己创建的目录运行这些脚本：`-Update` 与 `-Uninstall` 只操作包含合法 `.veyra-install.json` 标记的目录。
-
-<a id="how-it-works"></a>
-## 🧠 How it works / 工作原理
-
-```mermaid
-graph TD
-    A[原始崩溃日志] --> B(Python 正则引擎)
-    B -->|提取真实异常证据| C["证据 ID：E1、E2、E3"]
-    C -->|发送给| D[DeepSeek 模型]
-    D -->|强制约束| E[只能引用证据 ID]
-    E -->|Python 二次映射| F[真实的日志行号]
-    F --> G[校验后的 report.md]
-```
-
-1. **读取日志**（`read_log`）：处理文件不存在、文件为空、无法解码的字节（用替换字符解码）。
-2. **提取证据**（`extract_evidence`）：逐行扫描日志，聚合异常块，记录真实行号，检测疑似注入文本，分配 `E1...` ID，并应用截断。
-3. **组装模型输入**（`build_messages`）或**本地规则输出**（`build_local_output`）：系统提示词要求模型只引用给定证据 ID、不编造行号、把日志文本当数据、不给出确定性根因、未知环境值一律用 `null`。
-4. **校验**（`validate_output`）：确认 8 个字段，过滤未知证据 ID，并对可疑内容给出警告。
-5. **渲染**（`render_report`）：写出 `report.md`；证据小节中的每一处行号都来自 Python 的证据表，而不是模型。
-
-8 个字段为：`issue_title`、`symptoms`、`environment`、`reproduction_steps`、`missing_information`、`current_assessment`、`evidence_refs`、`disclaimer`。
 
 <a id="limitations"></a>
 ## 🚧 Limitations / 已知限制
