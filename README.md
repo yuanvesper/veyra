@@ -10,7 +10,7 @@
 
 **English** | [简体中文](./README_zh.md)
 
-Veyra is a local command-line tool for Minecraft mod crash logs. It extracts exception evidence from a log file with Python, assigns evidence IDs, and renders a structured Markdown triage report. An optional DeepSeek API mode can fill in the narrative fields, but the model may only reference the evidence IDs that Python extracted — Python owns the line numbers that appear in the report.
+Veyra is a general-purpose, local command-line tool for game mod crash logs. It extracts exception evidence from a log file with Python, assigns evidence IDs, and renders a structured Markdown triage report. The evidence-extraction and line-mapping pipeline is engine-agnostic; the current regex library is deeply optimized for the Java/Minecraft ecosystem first. An optional DeepSeek API mode can fill in the narrative fields, but the model may only reference the evidence IDs that Python extracted — Python owns the line numbers that appear in the report.
 
 The repository also contains an Agent Skill for conversation-side issue triage. See [skills/mod-issue-triage/SKILL.md](skills/mod-issue-triage/SKILL.md).
 
@@ -184,6 +184,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 
 - **No root-cause analysis and no fixes.** The tool organizes information; it does not debug mods, run the game, or repair code.
 - **Regex-based extraction.** It covers common Java/NeoForge formats but may miss unusual layouts or attribute evidence incorrectly.
+- **Java-focused parsing.** The current regex engine is optimized for Java-based games (e.g., Minecraft). Other engines (Unity, Unreal) may require custom parsing rules.
 - **Keyword-based injection detection.** Reworded or encoded injections may not be detected.
 - **UTF-8 logs only.** Other encodings are decoded with replacement characters rather than converted.
 - **Overwrites `report.md`** without prompting or backup (see the warning above).
@@ -201,6 +202,7 @@ Nothing in this section exists in the current version. These are ideas for later
 - A generated expected-report preview for demonstration.
 - Batch analysis of multiple logs.
 - Configurable report templates.
+- Support for additional game engines (Unity, Unreal, Godot) and their crash log formats.
 
 <a id="contributing"></a>
 ## 🤝 Contributing
