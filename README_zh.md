@@ -10,7 +10,7 @@
 
 [English](./README.md) | **简体中文**
 
-Veyra 是一个面向 Minecraft Mod 崩溃日志的本地命令行工具。它用 Python 从日志中提取异常证据、分配证据 ID，并渲染结构化 Markdown 问题报告。可选的 DeepSeek API 模式可以补全叙述字段，但模型只能引用 Python 提取出的证据 ID —— 报告中的行号由 Python 控制。
+Veyra 是一个通用的、本地运行的游戏 Mod 崩溃日志整理命令行工具。它用 Python 从日志中提取异常证据、分配证据 ID，并渲染结构化 Markdown 问题报告。证据提取与行号映射机制不依赖具体游戏引擎，当前正则库优先针对 Java/Minecraft 生态进行了深度优化。可选的 DeepSeek API 模式可以补全叙述字段，但模型只能引用 Python 提取出的证据 ID —— 报告中的行号由 Python 控制。
 
 仓库中还包含一个用于对话侧问题整理的 Agent Skill，见 [skills/mod-issue-triage/SKILL.md](skills/mod-issue-triage/SKILL.md)。
 
@@ -184,6 +184,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 
 - **不做根因分析，也不修复问题。** 工具负责整理信息，不调试 Mod、不启动游戏、不修改代码。
 - **基于正则的提取。** 覆盖常见 Java/NeoForge 格式，但可能遗漏特殊排版或归属错误的证据。
+- **当前以 Java 日志为主。** 当前的正则引擎针对 Java 系游戏（如 Minecraft）进行了深度优化；其他引擎（如 Unity、Unreal）的日志格式可能需要额外适配。
 - **基于关键词的注入检测。** 改写或编码后的注入文本可能检测不到。
 - **仅支持 UTF-8 日志。** 其他编码会以替换字符解码，而不是转换。
 - **会覆盖 `report.md`**，无提示、无备份（见上方警告）。
@@ -201,6 +202,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 - 用于演示的预期报告预览文件。
 - 多日志批量分析。
 - 可配置的报告模板。
+- 支持更多游戏引擎（Unity、Unreal、Godot）及其崩溃日志格式。
 
 <a id="contributing"></a>
 ## 🤝 Contributing / 参与贡献
