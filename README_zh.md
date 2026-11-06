@@ -6,6 +6,7 @@
   ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
   ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
   ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=for-the-badge)
+  ![CI](https://github.com/yuanvesper/veyra/actions/workflows/test.yml/badge.svg)
 </div>
 
 [English](./README.md) | **简体中文**
@@ -45,7 +46,7 @@ Veyra 是一个通用的、本地运行的游戏 Mod 崩溃日志整理命令行
 > **核心差异** —— CLI 使用由 Python 生成的证据 ID 与行号映射来约束日志引用，降低模型辅助报告中编造行号的风险；但它不保证模型的诊断结论正确。
 
 > [!WARNING]
-> **`report.md` 会被覆盖。** CLI 会在**当前工作目录**生成 `report.md`。如果同名文件已存在，会被**无提示覆盖**，并且**不会自动备份**。运行前请先移动或重命名需要保留的报告。
+> **未指定输出路径时会覆盖 `report.md`。** 如果不传 `--output`，CLI 会在**当前工作目录**生成 `report.md`，并静默覆盖同名文件且不备份。请使用 `-o <路径>` / `--output <路径>` 指定其他输出文件。
 
 > [!IMPORTANT]
 > **Skill 与 CLI 没有集成。** Agent Skill（`skills/mod-issue-triage/`）是一组对话规范；Python CLI（`triage_agent.py`）负责提取、校验和渲染报告。两者**没有代码级的自动集成**：Skill **不会**在后台调用 CLI，CLI 也不会加载 Skill。它们需要分别使用。
@@ -87,7 +88,7 @@ python triage_agent.py demo/sample-crash.log
 TRIAGE_LOCAL_MODE=1 python triage_agent.py demo/sample-crash.log
 ```
 
-报告会写入当前目录的 `report.md`。`demo/sample-crash.log` 是纯合成日志，仅用于测试与演示，不是真实崩溃日志。
+报告会写入当前目录的 `report.md`。使用 `-o <路径>` / `--output <路径>` 可指定其他输出文件，避免覆盖已有报告。`demo/sample-crash.log` 是纯合成日志，仅用于测试与演示，不是真实崩溃日志。
 
 不传路径时，CLI 会读取当前目录下的 `crash_log.txt`：
 
@@ -97,22 +98,42 @@ python triage_agent.py
 
 ### API mode (optional) / API 模式（可选）
 
+任何 OpenAI 兼容接口都可以使用；`LLM_*` 变量优先于 `DEEPSEEK_*`。
+
 ```powershell
+# DeepSeek（默认地址）
 $env:DEEPSEEK_API_KEY = "<你的 API Key>"
 python triage_agent.py demo/sample-crash.log
+
+# Kimi / Moonshot（OpenAI 兼容）
+$env:LLM_API_KEY = "<你的 Key>"
+$env:LLM_BASE_URL = "https://api.moonshot.cn/v1"
+$env:LLM_MODEL = "moonshot-v1-8k"
+python triage_agent.py demo/sample-crash.log -o report-kimi.md
+
+# 本地 Ollama（OpenAI 兼容；CLI 只要求 Key 非空）
+$env:LLM_API_KEY = "ollama"
+$env:LLM_BASE_URL = "http://localhost:11434/v1"
+$env:LLM_MODEL = "llama3.1"
+python triage_agent.py demo/sample-crash.log -o report-ollama.md
 ```
 
 环境变量：
 
 | 变量 | 是否必填 | 含义 |
 | --- | --- | --- |
-| `DEEPSEEK_API_KEY` | 仅 API 模式必填 | DeepSeek API Key；未配置时自动进入本地模式。 |
-| `DEEPSEEK_BASE_URL` | 否 | API 地址，默认 `https://api.deepseek.com`。 |
-| `DEEPSEEK_MODEL` | 否 | 模型名称，默认 `deepseek-chat`。 |
+| `LLM_API_KEY` | API 模式（优先） | 任意 OpenAI 兼容服务的 API Key；设置后覆盖 `DEEPSEEK_API_KEY`。 |
+| `LLM_BASE_URL` | 否 | 兼容服务的 Base URL；设置后覆盖 `DEEPSEEK_BASE_URL`。 |
+| `LLM_MODEL` | 否 | 模型名称；设置后覆盖 `DEEPSEEK_MODEL`。 |
+| `DEEPSEEK_API_KEY` | API 模式（回退） | DeepSeek Key；仅在未设置 `LLM_API_KEY` 时使用。 |
+| `DEEPSEEK_BASE_URL` | 否 | DeepSeek 地址（默认 `https://api.deepseek.com`），仅在未设置 `LLM_BASE_URL` 时使用。 |
+| `DEEPSEEK_MODEL` | 否 | DeepSeek 模型名（默认 `deepseek-chat`），仅在未设置 `LLM_MODEL` 时使用。 |
 | `TRIAGE_LOCAL_MODE` | 否 | 设为 `1` / `true` / `yes` / `on` 时强制本地模式。 |
 | `TRIAGE_DESCRIPTION` | 否 | 可选，用户问题描述，会传入报告提示词。 |
 
-CLI 没有选择输出路径的参数：报告文件名固定为工作目录下的 `report.md`。
+配置 `LLM_*` 会覆盖对应的 `DEEPSEEK_*`，因此无需改代码即可接入 Kimi、Ollama 及其他 OpenAI 兼容服务。
+
+报告路径可通过 `-o <路径>` 或 `--output <路径>` 指定（例如 `python triage_agent.py demo/sample-crash.log -o my-report.md`）；不指定时仍为工作目录下的 `report.md`。
 
 <a id="features"></a>
 ## 🚀 Features / 功能特性
@@ -123,7 +144,7 @@ CLI 没有选择输出路径的参数：报告文件名固定为工作目录下�
 - **提示词注入检测**：命中常见注入短语的行会被记录为 `suspicious_text` 证据，绝不会被执行。
 - **截断**：单个证据块最多保留 50 行堆栈，全部证据内容最多 50000 字符，截断时标记 `truncated` 与 `[已截断]`。
 - **渲染前校验**：检查 8 个必需字段；剔除不存在的证据 ID 并警告；对无法在证据中找到依据的环境值、确定性根因表述、文本字段中的行号引用分别给出警告。
-- **可选的 DeepSeek API 模式**：仅使用 Python 标准库调用 DeepSeek chat completions 接口，并针对认证失败、余额不足、限流、服务端错误、超时与网络错误给出明确处理。
+- **可选的 OpenAI 兼容 API 模式**：仅使用 Python 标准库调用任何 OpenAI 兼容的 chat completions 接口（DeepSeek、Kimi/Moonshot、本地 Ollama 等），并针对认证失败、余额不足、限流、服务端错误、超时与网络错误给出明确处理。
 
 <a id="how-it-works"></a>
 ## 🧠 How it works / 工作原理

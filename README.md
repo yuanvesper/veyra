@@ -6,6 +6,7 @@
   ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
   ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
   ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=for-the-badge)
+  ![CI](https://github.com/yuanvesper/veyra/actions/workflows/test.yml/badge.svg)
 </div>
 
 **English** | [简体中文](./README_zh.md)
@@ -45,7 +46,7 @@ The repository also contains an Agent Skill for conversation-side issue triage. 
 > **Core Difference** — The CLI uses Python-generated evidence IDs and line mappings to constrain log references, reducing the risk of fabricated line numbers in model-assisted reports. It does not guarantee that the model's diagnosis is correct.
 
 > [!WARNING]
-> **`report.md` is overwritten.** The CLI writes `report.md` into the **current working directory**. If `report.md` already exists, it is **overwritten without prompting**, and no backup is created. Move or rename any report you want to keep before running the tool.
+> **Default output overwrites `report.md`.** If you do not pass `--output`, the CLI writes `report.md` into the **current working directory** and silently overwrites an existing file without a backup. Use `-o <path>` / `--output <path>` to write somewhere else.
 
 > [!IMPORTANT]
 > **Skill and CLI are not integrated.** The Agent Skill (`skills/mod-issue-triage/`) is a set of conversational instructions. The Python CLI (`triage_agent.py`) performs extraction, validation, and report rendering. They are **not integrated at code level**: the Skill does **not** invoke the CLI in the background, and the CLI does not load the Skill. Run them separately.
@@ -87,7 +88,7 @@ python triage_agent.py demo/sample-crash.log
 TRIAGE_LOCAL_MODE=1 python triage_agent.py demo/sample-crash.log
 ```
 
-`report.md` is written to the current directory. `demo/sample-crash.log` is synthetic data for testing and demonstration only; it is not a real crash report.
+`report.md` is written to the current directory. Use `-o <path>` / `--output <path>` to choose a different file and avoid overwriting an existing report. `demo/sample-crash.log` is synthetic data for testing and demonstration only; it is not a real crash report.
 
 If you omit the path, the CLI reads `crash_log.txt` from the current directory:
 
@@ -97,22 +98,42 @@ python triage_agent.py
 
 ### API mode (optional)
 
+Any OpenAI-compatible endpoint works. The `LLM_*` variables take precedence over `DEEPSEEK_*`.
+
 ```powershell
+# DeepSeek (default endpoint)
 $env:DEEPSEEK_API_KEY = "<your API key>"
 python triage_agent.py demo/sample-crash.log
+
+# Kimi / Moonshot (OpenAI-compatible)
+$env:LLM_API_KEY = "<your key>"
+$env:LLM_BASE_URL = "https://api.moonshot.cn/v1"
+$env:LLM_MODEL = "moonshot-v1-8k"
+python triage_agent.py demo/sample-crash.log -o report-kimi.md
+
+# Local Ollama (OpenAI-compatible; any non-empty key is accepted by the CLI)
+$env:LLM_API_KEY = "ollama"
+$env:LLM_BASE_URL = "http://localhost:11434/v1"
+$env:LLM_MODEL = "llama3.1"
+python triage_agent.py demo/sample-crash.log -o report-ollama.md
 ```
 
 Environment variables:
 
 | Variable | Required | Meaning |
 | --- | --- | --- |
-| `DEEPSEEK_API_KEY` | API mode only | DeepSeek API key. When missing, the CLI automatically uses local mode. |
-| `DEEPSEEK_BASE_URL` | No | API base URL, default `https://api.deepseek.com`. |
-| `DEEPSEEK_MODEL` | No | Model name, default `deepseek-chat`. |
+| `LLM_API_KEY` | API mode (preferred) | API key for any OpenAI-compatible service. Overrides `DEEPSEEK_API_KEY`. |
+| `LLM_BASE_URL` | No | Base URL of the compatible service. Overrides `DEEPSEEK_BASE_URL`. |
+| `LLM_MODEL` | No | Model name. Overrides `DEEPSEEK_MODEL`. |
+| `DEEPSEEK_API_KEY` | API mode (fallback) | DeepSeek key, used only when `LLM_API_KEY` is unset. |
+| `DEEPSEEK_BASE_URL` | No | DeepSeek base URL (default `https://api.deepseek.com`), used only when `LLM_BASE_URL` is unset. |
+| `DEEPSEEK_MODEL` | No | DeepSeek model name (default `deepseek-chat`), used only when `LLM_MODEL` is unset. |
 | `TRIAGE_LOCAL_MODE` | No | Set to `1` / `true` / `yes` / `on` to force local mode. |
 | `TRIAGE_DESCRIPTION` | No | Optional user description passed to the report prompt. |
 
-The CLI has no flag for choosing the output path: the report file name is always `report.md` in the working directory.
+If the `LLM_*` variables are set, they override the corresponding `DEEPSEEK_*` variables, so Kimi, Ollama, and other OpenAI-compatible services can be used without code changes.
+
+The report path can be chosen with `-o <path>` or `--output <path>` (for example, `python triage_agent.py demo/sample-crash.log -o my-report.md`). Without it, the file name is `report.md` in the working directory.
 
 <a id="features"></a>
 ## 🚀 Features
@@ -123,7 +144,7 @@ The CLI has no flag for choosing the output path: the report file name is always
 - **Prompt-injection detection**: lines matching common injection phrases are stored as `suspicious_text` evidence and never executed.
 - **Truncation**: at most 50 stack lines per evidence block and 50,000 characters across all evidence content, marked with `truncated` and `[已截断]`.
 - **Validation before rendering**: checks the eight required fields, removes evidence IDs that do not exist (with a warning), warns when environment values cannot be found in the evidence, warns about deterministic root-cause wording, and warns when line numbers appear inside text fields.
-- **Optional DeepSeek API mode**: calls the DeepSeek chat completions endpoint using only the Python standard library, with explicit error handling for authentication, balance, rate-limit, server, timeout, and network failures.
+- **Optional OpenAI-compatible API mode**: calls any OpenAI-compatible chat completions endpoint (DeepSeek, Kimi/Moonshot, local Ollama, etc.) using only the Python standard library, with explicit error handling for authentication, balance, rate-limit, server, timeout, and network failures.
 
 <a id="how-it-works"></a>
 ## 🧠 How it works
