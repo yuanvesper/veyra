@@ -7,8 +7,11 @@
 因此模型无法编造行号，也无法引用日志中不存在的证据。
 
 运行方式：
-    python triage_agent.py                # 有 DEEPSEEK_API_KEY 时走真实 API
-    TRIAGE_LOCAL_MODE=1 python triage_agent.py   # 强制本地模式（不调用模型）
+    python triage_agent.py [日志路径] [-o 输出路径]
+    TRIAGE_LOCAL_MODE=1 python triage_agent.py demo/sample-crash.log -o custom.md
+
+未指定 -o 时仍写入 report.md；API 模式支持任何 OpenAI 兼容接口
+（LLM_* 变量优先，DEEPSEEK_* 作为兼容回退）。
 
 依赖：仅 Python 标准库（re/json/os/sys/pathlib/urllib）。
 """
@@ -384,18 +387,32 @@ def _strip_code_fence(text):
 
 
 def call_model(messages):
-    """调用 DeepSeek API，返回解析后的 JSON dict；出错时打印中文原因并退出。
+    """调用 OpenAI 兼容 API，返回解析后的 JSON dict；出错时打印中文原因并退出。
 
-    从环境变量读取：DEEPSEEK_API_KEY（必填）、DEEPSEEK_BASE_URL、DEEPSEEK_MODEL。
+    环境变量优先级：
+    - API Key：LLM_API_KEY -> DEEPSEEK_API_KEY（至少一个）
+    - Base URL：LLM_BASE_URL -> DEEPSEEK_BASE_URL -> https://api.deepseek.com
+    - Model：LLM_MODEL -> DEEPSEEK_MODEL -> deepseek-chat
     任何时候都不会打印 API Key。
     """
-    api_key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+    api_key = (
+        os.environ.get("LLM_API_KEY", "").strip()
+        or os.environ.get("DEEPSEEK_API_KEY", "").strip()
+    )
     if not api_key:
-        print("[错误] 未检测到 DEEPSEEK_API_KEY，无法调用模型。")
+        print("[错误] 未检测到 LLM_API_KEY 或 DEEPSEEK_API_KEY，无法调用模型。")
         sys.exit(1)
 
-    base_url = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
-    model = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
+    base_url = (
+        os.environ.get("LLM_BASE_URL", "").strip()
+        or os.environ.get("DEEPSEEK_BASE_URL", "").strip()
+        or "https://api.deepseek.com"
+    ).rstrip("/")
+    model = (
+        os.environ.get("LLM_MODEL", "").strip()
+        or os.environ.get("DEEPSEEK_MODEL", "").strip()
+        or "deepseek-chat"
+    )
     url = f"{base_url}/chat/completions"
 
     payload = json.dumps(
@@ -413,20 +430,20 @@ def call_model(messages):
         method="POST",
     )
 
-    print(f"[模型] 正在调用 DeepSeek API（model={model}）……")
+    print(f"[模型] 正在调用兼容 OpenAI 的 API（model={model}）……")
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
             raw = response.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError as exc:
         # 注意：这里只打印状态码和错误说明，绝不打印 API Key
         if exc.code in (401, 403):
-            print(f"[错误] 认证失败（HTTP {exc.code}）：DEEPSEEK_API_KEY 无效或无权限。")
+            print(f"[错误] 认证失败（HTTP {exc.code}）：LLM_API_KEY / DEEPSEEK_API_KEY 无效或无权限。")
         elif exc.code == 402:
             print("[错误] 账户余额不足（HTTP 402），请充值后重试。")
         elif exc.code == 429:
             print("[错误] 请求被限流或额度受限（HTTP 429），请稍后重试。")
         elif 500 <= exc.code < 600:
-            print(f"[错误] DeepSeek 服务端错误（HTTP {exc.code}），请稍后重试。")
+            print(f"[错误] 模型服务端错误（HTTP {exc.code}），请稍后重试。")
         else:
             detail = exc.read().decode("utf-8", errors="replace")[:200]
             print(f"[错误] API 请求失败（HTTP {exc.code}）：{detail}")
@@ -434,12 +451,12 @@ def call_model(messages):
     except urllib.error.URLError as exc:
         reason = getattr(exc, "reason", None)
         if isinstance(reason, TimeoutError):
-            print("[错误] 请求超时：DeepSeek API 在规定时间内没有响应。")
+            print("[错误] 请求超时：模型 API 在规定时间内没有响应。")
         else:
-            print(f"[错误] 网络错误：无法连接 DeepSeek API（{reason}）。")
+            print(f"[错误] 网络错误：无法连接模型 API（{reason}）。")
         sys.exit(1)
     except TimeoutError:
-        print("[错误] 请求超时：DeepSeek API 在规定时间内没有响应。")
+        print("[错误] 请求超时：模型 API 在规定时间内没有响应。")
         sys.exit(1)
 
     try:
@@ -666,7 +683,7 @@ def render_report(data, evidence_list, mode="api", issues=None, output_path=REPO
     if mode == "local":
         lines.append("> **本地模式：未调用模型，以下为提取结果（Python 规则生成，不是模型输出）。**")
     else:
-        lines.append("> **运行模式：真实 API 模式（DeepSeek）**。")
+        lines.append("> **运行模式：真实 API 模式（OpenAI 兼容接口）**。")
     lines.append("")
 
     lines.append("## 问题现象")
@@ -762,9 +779,41 @@ def _truthy(value):
     return value.strip().lower() in ("1", "true", "yes", "on")
 
 
+def _parse_args(argv):
+    """手动解析命令行：日志路径、-o/--output 输出路径。保持轻量、无第三方依赖。"""
+    log_path = None
+    output_path = REPORT_PATH
+    index = 0
+    while index < len(argv):
+        arg = argv[index]
+        if arg in ("-o", "--output"):
+            if index + 1 >= len(argv) or argv[index + 1].startswith("-"):
+                print(f"[错误] {arg} 缺少输出路径。")
+                sys.exit(2)
+            output_path = argv[index + 1]
+            index += 2
+            continue
+        if arg.startswith("--output="):
+            value = arg.split("=", 1)[1]
+            if not value:
+                print("[错误] --output 缺少输出路径。")
+                sys.exit(2)
+            output_path = value
+            index += 1
+            continue
+        if log_path is None:
+            log_path = arg
+            index += 1
+            continue
+        print(f"[错误] 无法识别的多余参数：{arg}")
+        print("用法：python triage_agent.py [日志路径] [-o 输出路径]")
+        sys.exit(2)
+    return log_path or DEFAULT_LOG_PATH, output_path
+
+
 def main():
     """串联流程：读日志 → 提取证据 → 选择模式 → 生成 JSON → 校验 → 渲染报告。"""
-    log_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_LOG_PATH
+    log_path, output_path = _parse_args(sys.argv[1:])
     description = os.environ.get(
         "TRIAGE_DESCRIPTION",
         "玩家反馈：安装某个 Mod 后游戏崩溃（原始描述缺失，仅依据日志整理）。",
@@ -781,9 +830,10 @@ def main():
         trunc = "（已截断）" if item.get("truncated") else ""
         print(f"  [{item['id']}] {item['type']} 第 {item['start_line']}–{item['end_line']} 行{trunc}")
 
-    local_mode = _truthy(os.environ.get("TRIAGE_LOCAL_MODE", "")) or not os.environ.get(
-        "DEEPSEEK_API_KEY", ""
-    ).strip()
+    api_key_present = bool(
+        (os.environ.get("LLM_API_KEY", "").strip() or os.environ.get("DEEPSEEK_API_KEY", "").strip())
+    )
+    local_mode = _truthy(os.environ.get("TRIAGE_LOCAL_MODE", "")) or not api_key_present
 
     if local_mode:
         print("[模式] 本地模式：未调用模型。")
@@ -807,10 +857,10 @@ def main():
         print("[错误] 模型输出未通过校验，不生成正式报告：")
         for problem in fatal:
             print(f"  - {problem}")
-        write_validation_failure_note("；".join(fatal))
+        write_validation_failure_note("；".join(fatal), output_path=output_path)
         sys.exit(1)
 
-    render_report(cleaned, evidence_list, mode=mode, issues=issues)
+    render_report(cleaned, evidence_list, mode=mode, issues=issues, output_path=output_path)
 
 
 if __name__ == "__main__":

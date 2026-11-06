@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Local mode smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Run local mode on the synthetic demo log
+        run: TRIAGE_LOCAL_MODE=1 python triage_agent.py demo/sample-crash.log
+
+      - name: Verify report.md was generated
+        run: test -s report.md
+
+      - name: Check Bash installer syntax
+        run: bash -n scripts/install.sh

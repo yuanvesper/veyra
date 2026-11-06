@@ -1,6 +1,6 @@
 ---
 name: mod-issue-triage
-description: Turn unclear player or mod-author feedback about a Minecraft Fabric mod bug or crash report into a structured, information-complete issue report. Use when the user says issue triage, mod bug, crash report, 游戏 Mod 问题, or 模组报错, or asks to organize messy mod bug information before further handling. 把玩家或 Mod 作者描述不清的 Mod 问题反馈，整理成结构化、信息完整、方便后续处理的问题报告。
+description: Turn unclear player or mod-author feedback about a game mod bug or crash report into a structured, information-complete issue report. Use when the user says issue triage, mod bug, crash report, 游戏 Mod 问题, or 模组报错, or asks to organize messy mod bug information before further handling. 把玩家或 Mod 作者描述不清的 Mod 问题反馈，整理成结构化、信息完整、方便后续处理的问题报告。
 ---
 
 # Mod Issue Triage
