@@ -1,30 +1,59 @@
-# Veyra
+<div align="center">
+  <h1>🔍 Veyra</h1>
+  <p><b>Stop AI hallucinations in game crash logs. Extract real evidence, map exact line numbers.</b></p>
+  <p><i>告别大模型瞎编报错，用 Python 约束 AI 真实提取游戏崩溃证据。</i></p>
 
-[中文文档](README_zh.md)
+  ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+  ![License](https://img.shields.io/badge/license-MIT-green)
+  ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+  ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
+</div>
 
 Veyra is a local command-line tool for Minecraft mod crash logs. It extracts exception evidence from a log file with Python, assigns evidence IDs, and renders a structured Markdown triage report. An optional DeepSeek API mode can fill in the narrative fields, but the model may only reference the evidence IDs that Python extracted — Python owns the line numbers that appear in the report.
 
 The repository also contains an Agent Skill for conversation-side issue triage. See [skills/mod-issue-triage/SKILL.md](skills/mod-issue-triage/SKILL.md).
 
-## Important notices
+<a id="toc"></a>
+## 📖 Table of Contents / 目录
 
-### Core Difference
+| English | 中文 |
+| --- | --- |
+| [Why Veyra?](#why-veyra) | [为什么用 Veyra？](#why-veyra) |
+| [Important Notices](#notices) | [重要声明](#notices) |
+| [Features](#features) | [功能特性](#features) |
+| [Quick Start](#quick-start) | [快速开始](#quick-start) |
+| [Installing the Skill files](#install-skill) | [安装 Skill 文件](#install-skill) |
+| [How it works](#how-it-works) | [工作原理](#how-it-works) |
+| [Limitations](#limitations) | [已知限制](#limitations) |
+| [Roadmap](#roadmap) | [路线图](#roadmap) |
+| [Contributing](#contributing) | [参与贡献](#contributing) |
+| [Support](#support) | [支持](#support) |
+| [License](#license) | [许可证](#license) |
 
-> The CLI uses Python-generated evidence IDs and line mappings to constrain log references, reducing the risk of fabricated line numbers in model-assisted reports. It does not guarantee that the model's diagnosis is correct.
+<a id="why-veyra"></a>
+## 💡 Why Veyra? / 为什么用 Veyra？
 
-### WARNING: `report.md` is overwritten
+> ❌ **Just paste the log into ChatGPT**: "Your game crashed at line 142; it is probably a mod conflict." *(The AI made that up — your log may not even have 142 lines.)*
+>
+> ✅ **Use Veyra**: Python extracts the log first, assigns `[E1]` evidence IDs, and the model may only cite `[E1]`. The final report's line numbers are reconstructed by Python from the evidence table — no guessing, no invented line numbers.
 
-The CLI writes `report.md` into the **current working directory**. If `report.md` already exists, it is **overwritten without prompting**, and no backup is created. Move or rename any report you want to keep before running the tool.
+<a id="notices"></a>
+## ⚠️ Important Notices / 重要声明
 
-### Skill and CLI are not integrated
+> [!NOTE]
+> **Core Difference** — The CLI uses Python-generated evidence IDs and line mappings to constrain log references, reducing the risk of fabricated line numbers in model-assisted reports. It does not guarantee that the model's diagnosis is correct.
 
-The Agent Skill (`skills/mod-issue-triage/`) is a set of conversational instructions. The Python CLI (`triage_agent.py`) performs extraction, validation, and report rendering. They are **not integrated at code level**: the Skill does **not** invoke the CLI in the background, and the CLI does not load the Skill. You run them separately.
+> [!WARNING]
+> **`report.md` is overwritten.** The CLI writes `report.md` into the **current working directory**. If `report.md` already exists, it is **overwritten without prompting**, and no backup is created. Move or rename any report you want to keep before running the tool.
 
-### API mode stability
+> [!IMPORTANT]
+> **Skill and CLI are not integrated.** The Agent Skill (`skills/mod-issue-triage/`) is a set of conversational instructions. The Python CLI (`triage_agent.py`) performs extraction, validation, and report rendering. They are **not integrated at code level**: the Skill does **not** invoke the CLI in the background, and the CLI does not load the Skill. Run them separately.
 
-The DeepSeek API mode has only been tested a very small number of times. Connection stability and response formatting are **not guaranteed**. Local mode requires no API key and no network access.
+> [!CAUTION]
+> **API mode stability.** The DeepSeek API mode has only been tested a very small number of times. Connection stability and response formatting are **not guaranteed**. Local mode requires no API key and no network access.
 
-## Features
+<a id="features"></a>
+## 🚀 Features
 
 - **Local mode without an API key** (`TRIAGE_LOCAL_MODE=1` or no `DEEPSEEK_API_KEY`): reads a log, extracts evidence with regular expressions, generates the eight report fields by rules, validates them, and writes `report.md`.
 - **Exception evidence extraction**: Java exception and error headers (`Exception` / `Error` / `Fatal`), `at ...` stack frames, `... N more` lines, `Caused by:` blocks (including NeoForge-style `Caused by 0:` / `Caused by 1:` numbering), `Suppressed:` blocks, and `Exception in thread "..."` prefixes.
@@ -34,7 +63,10 @@ The DeepSeek API mode has only been tested a very small number of times. Connect
 - **Validation before rendering**: checks the eight required fields, removes evidence IDs that do not exist (with a warning), warns when environment values cannot be found in the evidence, warns about deterministic root-cause wording, and warns when line numbers appear inside text fields.
 - **Optional DeepSeek API mode**: calls the DeepSeek chat completions endpoint using only the Python standard library, with explicit error handling for authentication, balance, rate-limit, server, timeout, and network failures.
 
-## Quick Start
+<a id="quick-start"></a>
+## ⚡ Quick Start
+
+> 💡 **Not set up yet? Want to see the output first?** Check the [Demo preview report](demo/expected-report-preview.md) — it is exactly what a local run produces.
 
 ### Requirements
 
@@ -83,7 +115,8 @@ Environment variables:
 
 The CLI has no flag for choosing the output path: the report file name is always `report.md` in the working directory.
 
-## Installing the Skill files (optional)
+<a id="install-skill"></a>
+## 📦 Installing the Skill files (optional)
 
 Two wrapper scripts copy `skills/mod-issue-triage/` into a destination directory that DSH can scan. They never follow symbolic links and require an **absolute** destination path.
 
@@ -103,7 +136,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 
 `-Destination` / `--dest` must be an absolute path to an existing parent directory; relative paths and paths containing `..` are rejected. On Windows the default execution policy may block local scripts: run PowerShell with `-ExecutionPolicy Bypass` for that invocation rather than changing the machine-wide policy. Only use these scripts on directories you created: `-Update` and `-Uninstall` operate only on directories that contain a valid `.veyra-install.json` marker.
 
-## How it works
+<a id="how-it-works"></a>
+## 🧠 How it works
+
+```mermaid
+graph TD
+    A[Raw crash log] --> B(Python regex engine)
+    B -->|extract real evidence| C[Evidence IDs: E1, E2, E3]
+    C -->|sent to| D[DeepSeek model]
+    D -->|constrained to| E[cite only evidence IDs]
+    E -->|mapped back by Python| F[real log line numbers]
+    F --> G[validated report.md]
+```
 
 1. **Read the log** (`read_log`): handles missing files, empty files, and undecodable bytes (decoded with replacement characters).
 2. **Extract evidence** (`extract_evidence`): walks the log line by line, groups exception blocks, records real line numbers, detects injection-like text, assigns `E1...` IDs, and applies truncation.
@@ -113,7 +157,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 
 The eight fields are: `issue_title`, `symptoms`, `environment`, `reproduction_steps`, `missing_information`, `current_assessment`, `evidence_refs`, and `disclaimer`.
 
-## Limitations
+<a id="limitations"></a>
+## 🚧 Limitations
 
 - **No root-cause analysis and no fixes.** The tool organizes information; it does not debug mods, run the game, or repair code.
 - **Regex-based extraction.** It covers common Java/NeoForge formats but may miss unusual layouts or attribute evidence incorrectly.
@@ -124,7 +169,8 @@ The eight fields are: `issue_title`, `symptoms`, `environment`, `reproduction_st
 - **No sandboxing.** The CLI reads the log path you provide and writes `report.md` in the working directory.
 - **Skill and CLI are separate.** The Skill does not run the CLI, and the CLI does not depend on the Skill.
 
-## Roadmap (future plans, not implemented)
+<a id="roadmap"></a>
+## 🗺️ Roadmap (future plans, not implemented)
 
 Nothing in this section exists in the current version. These are ideas for later stages only, not descriptions of current functionality.
 
@@ -134,10 +180,17 @@ Nothing in this section exists in the current version. These are ideas for later
 - Batch analysis of multiple logs.
 - Configurable report templates.
 
-## Contributing
+<a id="contributing"></a>
+## 🤝 Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Local tests need no API key; run the CLI against `demo/sample-crash.log` in local mode.
 
-## License
+<a id="support"></a>
+## ⭐ Support
+
+If this tool saves you time, please consider giving it a Star! Contributions and issues are always welcome.
+
+<a id="license"></a>
+## 📄 License
 
 MIT. See [LICENSE](LICENSE).
