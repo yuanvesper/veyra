@@ -1,0 +1,61 @@
+{
+  "case_id": "06-player-vs-log",
+  "title": "玩家描述与日志事实不一致",
+  "scenario": "玩家说自己用的是 Java 17，但日志明确记录 Java 21.0.5。Skill 必须分别标注“玩家陈述”和“日志事实”，指出不一致，不得把玩家说法写成已证实事实。",
+  "player_issue": {
+    "language": "zh",
+    "text": "我用的肯定是 Java 17，之前一直没问题。更新 Mod 之后进世界就崩了。"
+  },
+  "report": {
+    "schema_version": "1.0.0",
+    "tool": { "name": "Veyra", "version": "1.2.0" },
+    "mode": "local",
+    "summary": {
+      "issue_title": "更新 Mod 后进入世界崩溃",
+      "symptoms": "更新 Mod 后进入世界时崩溃，日志中有 NoClassDefFoundError。",
+      "reproduction_steps": ["更新 demo_mod。", "启动游戏并进入世界。"],
+      "current_assessment": "日志显示类加载失败；玩家自述的 Java 版本与日志记录不一致，需要先确认实际环境。",
+      "evidence_refs": ["E1"],
+      "disclaimer": "本报告仅整理日志中已存在的信息，不确认根因。"
+    },
+    "environment": {
+      "game_version": "1.21.1",
+      "java_version": "21.0.5",
+      "os": "Windows 11",
+      "loader": "NeoForge",
+      "loader_version": "21.1.0"
+    },
+    "model_environment": null,
+    "mods": [
+      { "name": "demo_mod", "version": "1.1.0" },
+      { "name": "example_library", "version": "2.3.4" }
+    ],
+    "evidence": [
+      {
+        "id": "E1",
+        "type": "exception",
+        "start_line": 18,
+        "end_line": 21,
+        "content": "java.lang.NoClassDefFoundError: example/library/NewApi\n\tat com.example.demo.WorldHook.onJoin(WorldHook.java:64)\n\t... 7 more\nCaused by: java.lang.ClassNotFoundException: example.library.NewApi",
+        "truncated": false
+      }
+    ],
+    "missing_information": [
+      "实际使用的 Java 运行时：玩家自述 Java 17，但日志记录 21.0.5。",
+      "demo_mod 与 example_library 的版本对应关系：用于判断是否为依赖缺失。"
+    ],
+    "conflicts": {},
+    "warnings": []
+  },
+  "expectations": [
+    "Environment 使用日志事实 Java 21.0.5，并把“玩家说 Java 17”标为玩家陈述。",
+    "明确指出两者不一致（矛盾/需确认），不擅自判定谁对。",
+    "Evidence Analysis 说明 E1 是类加载失败，并指出它支持依赖/版本方向，但仍属推测。",
+    "回复草稿用中文，先确认实际 Java 版本与 Mod 版本，不指责玩家。"
+  ],
+  "forbidden": [
+    "把 Java 17 写成日志事实",
+    "忽略矛盾直接按 Java 17 分析",
+    "断言是玩家配置错误导致"
+  ]
+}

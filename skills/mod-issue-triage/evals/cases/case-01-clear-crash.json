@@ -1,0 +1,72 @@
+{
+  "case_id": "01-clear-crash",
+  "title": "明确崩溃日志：存在异常与 Caused by",
+  "scenario": "玩家提交了完整崩溃日志，Python 提取到异常块与 Caused by。Skill 应引用两条证据、区分日志事实与推测，并选择 Investigation Update 或 Initial Response。",
+  "player_issue": {
+    "language": "en",
+    "text": "Game crashes every time I break the custom door from this mod. Single-player, NeoForge 1.21.1. I attached the crash log."
+  },
+  "report": {
+    "schema_version": "1.0.0",
+    "tool": { "name": "Veyra", "version": "1.2.0" },
+    "mode": "local",
+    "summary": {
+      "issue_title": "Client crashes when breaking a custom door",
+      "symptoms": "The client crashes to desktop when a custom door block is broken.",
+      "reproduction_steps": [
+        "Enter a single-player world with the mod installed.",
+        "Place the custom door.",
+        "Break the door with any tool."
+      ],
+      "current_assessment": "The log contains a NullPointerException in the mod's DoorBlock.onRemove; the exact trigger is not confirmed.",
+      "evidence_refs": ["E1", "E2"],
+      "disclaimer": "This report only organizes information present in the log; it does not confirm a root cause."
+    },
+    "environment": {
+      "game_version": "1.21.1",
+      "java_version": "21.0.5",
+      "os": "Windows 11",
+      "loader": "NeoForge",
+      "loader_version": "21.1.0"
+    },
+    "model_environment": null,
+    "mods": [
+      { "name": "demo_mod", "version": "1.0.0" },
+      { "name": "example_library", "version": "2.3.4" }
+    ],
+    "evidence": [
+      {
+        "id": "E1",
+        "type": "exception",
+        "start_line": 14,
+        "end_line": 18,
+        "content": "java.lang.NullPointerException: Cannot invoke \"net.minecraft.world.level.block.entity.BlockEntity.getType()\" because \"entity\" is null\n\tat com.example.demo.DoorBlock.onRemove(DoorBlock.java:88)\n\tat net.minecraft.world.level.Level.setBlock(Level.java:512)\n\tat net.minecraft.server.level.ServerPlayerGameMode.destroyBlock(ServerPlayerGameMode.java:301)\n\tat net.minecraft.server.network.ServerGamePacketListenerImpl.handlePlayerAction(ServerGamePacketListenerImpl.java:1801)",
+        "truncated": false
+      },
+      {
+        "id": "E2",
+        "type": "caused_by",
+        "start_line": 23,
+        "end_line": 25,
+        "content": "Caused by: java.lang.NullPointerException: Cannot invoke \"net.minecraft.world.level.block.entity.BlockEntity.getType()\" because \"entity\" is null\n\tat com.example.demo.DoorBlock.onRemove(DoorBlock.java:88)\n\t... 12 more",
+        "truncated": false
+      }
+    ],
+    "missing_information": [],
+    "conflicts": {},
+    "warnings": []
+  },
+  "expectations": [
+    "Environment 段完整展示 5 个字段，不出现 model_environment 内容。",
+    "Evidence Analysis 引用 E1、E2，并写出行号 14–18、23–25，内容与 JSON 一致。",
+    "引用格式包含证据 ID 与原始行号，例如 [E1] 第 14–18 行。",
+    "Possible Causes 中的原因明确标注为推测/可能，且说明依据是 E1/E2。",
+    "不得声称已确认根因，不得声称已修复。",
+    "Maintainer Reply Draft 用英文，礼貌且具体，只询问真正缺少的信息（例如完整 Mod 列表或最小复现环境）。"
+  ],
+  "forbidden": [
+    "创造 JSON 中不存在的证据 ID 或行号",
+    "把 NullPointerException 直接写成已确认根因",
+    "承诺修复时间或版本号"
+  ]
+}

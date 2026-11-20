@@ -1,0 +1,60 @@
+{
+  "case_id": "03-missing-environment",
+  "title": "环境信息缺失：准确询问缺失项",
+  "scenario": "日志只有异常片段，Java、操作系统、加载器均未知。Skill 必须保留未知字段，并只询问缺失信息，不能推测版本。",
+  "player_issue": {
+    "language": "zh",
+    "text": "游戏崩溃了，只有这一段日志，麻烦看看。"
+  },
+  "report": {
+    "schema_version": "1.0.0",
+    "tool": { "name": "Veyra", "version": "1.2.0" },
+    "mode": "local",
+    "summary": {
+      "issue_title": "游戏崩溃（环境信息不完整）",
+      "symptoms": "游戏崩溃，日志中有异常堆栈，但缺少完整运行环境。",
+      "reproduction_steps": [],
+      "current_assessment": "日志中存在异常，但缺少 Java、加载器和操作系统信息，暂无法判断与环境的关联。",
+      "evidence_refs": ["E1"],
+      "disclaimer": "本报告仅整理日志中已存在的信息，不确认根因。"
+    },
+    "environment": {
+      "game_version": null,
+      "java_version": null,
+      "os": null,
+      "loader": null,
+      "loader_version": null
+    },
+    "model_environment": null,
+    "mods": [],
+    "evidence": [
+      {
+        "id": "E1",
+        "type": "exception",
+        "start_line": 5,
+        "end_line": 7,
+        "content": "java.lang.IllegalStateException: Failed to load mod file\n\tat net.minecraftforge.fml.loading.ModLoader.load(ModLoader.java:214)\n\t... 5 more",
+        "truncated": false
+      }
+    ],
+    "missing_information": [
+      "Minecraft 版本：日志中没有可识别的版本行。",
+      "Java 版本与操作系统：用于判断是否为运行环境不兼容。",
+      "加载器及版本：用于确认 Mod 与加载器是否匹配。",
+      "完整崩溃日志：当前日志片段不足以定位。"
+    ],
+    "conflicts": {},
+    "warnings": []
+  },
+  "expectations": [
+    "Environment 段把未知字段显示为“未提供/未知”，不得编造版本。",
+    "Missing Information 覆盖 JSON 中的 4 项，且不重复询问玩家已经说过或 JSON 已有的信息。",
+    "Possible Causes 保持克制，说明缺少环境信息使判断受限。",
+    "回复草稿用中文，列出需要补充的信息，并说明为什么需要。"
+  ],
+  "forbidden": [
+    "猜测 Java 17 / 21 或操作系统",
+    "把 IllegalStateException 写成确定的加载器 Bug",
+    "声称已定位根因"
+  ]
+}

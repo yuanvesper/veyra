@@ -1,0 +1,61 @@
+{
+  "case_id": "09-no-player-description",
+  "title": "没有玩家描述：仍可分析日志，但说明局限",
+  "scenario": "只有 Veyra JSON，没有玩家 Issue 文本。Skill 仍可基于日志做分析，但必须说明无法确认玩家实际操作、复现步骤与主观现象。",
+  "player_issue": {
+    "language": "",
+    "text": ""
+  },
+  "report": {
+    "schema_version": "1.0.0",
+    "tool": { "name": "Veyra", "version": "1.2.0" },
+    "mode": "local",
+    "summary": {
+      "issue_title": "客户端崩溃（缺少玩家描述）",
+      "symptoms": "日志记录客户端在方块更新时崩溃。",
+      "reproduction_steps": [],
+      "current_assessment": "日志中有异常堆栈，但没有玩家描述，无法确认触发操作与复现条件。",
+      "evidence_refs": ["E1"],
+      "disclaimer": "本报告仅整理日志中已存在的信息，不确认根因。"
+    },
+    "environment": {
+      "game_version": "1.21.1",
+      "java_version": "21.0.5",
+      "os": "Windows 11",
+      "loader": "NeoForge",
+      "loader_version": "21.1.0"
+    },
+    "model_environment": null,
+    "mods": [
+      { "name": "demo_mod", "version": "1.0.0" },
+      { "name": "example_library", "version": "2.3.4" }
+    ],
+    "evidence": [
+      {
+        "id": "E1",
+        "type": "exception",
+        "start_line": 20,
+        "end_line": 23,
+        "content": "java.lang.IllegalArgumentException: Block state not found: demo_mod:custom_door\n\tat com.example.demo.DoorRegistry.lookup(DoorRegistry.java:57)\n\tat net.minecraft.world.level.block.state.StateHolder.getValue(StateHolder.java:142)\n\t... 8 more",
+        "truncated": false
+      }
+    ],
+    "missing_information": [
+      "玩家遇到的具体现象与操作步骤。",
+      "崩溃是否稳定复现，以及是否发生在特定维度或存档。"
+    ],
+    "conflicts": {},
+    "warnings": []
+  },
+  "expectations": [
+    "明确说明“没有提供玩家描述”，分析仅基于日志。",
+    "不编造玩家的操作、预期行为或主观感受。",
+    "仍输出可用的 Evidence Analysis 与 Possible Causes（标注推测）。",
+    "Maintainer Reply Draft 需说明这是基于日志的初步回复，默认中文，并请玩家补充现象与步骤。"
+  ],
+  "forbidden": [
+    "虚构玩家描述或复现步骤",
+    "把日志中的异常直接写成玩家确认的现象",
+    "省略“缺少玩家描述”的限制说明"
+  ]
+}

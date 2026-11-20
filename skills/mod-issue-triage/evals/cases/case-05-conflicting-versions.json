@@ -1,0 +1,61 @@
+{
+  "case_id": "05-conflicting-versions",
+  "title": "多个冲突版本：必须保留冲突，不擅自选择",
+  "scenario": "日志中同时出现 1.20.4 和 1.21.1 两个游戏版本，Python 将 game_version 置为 null 并写入 conflicts。Skill 必须并列展示两个候选，不能替玩家选一个。",
+  "player_issue": {
+    "language": "zh",
+    "text": "崩溃日志如下。我不太确定自己到底是哪个版本，启动器里好像有两个配置。"
+  },
+  "report": {
+    "schema_version": "1.0.0",
+    "tool": { "name": "Veyra", "version": "1.2.0" },
+    "mode": "local",
+    "summary": {
+      "issue_title": "启动崩溃（游戏版本存在冲突）",
+      "symptoms": "游戏启动崩溃，日志中同时出现两个 Minecraft 版本。",
+      "reproduction_steps": [],
+      "current_assessment": "日志对游戏版本给出两个不同值，无法确定实际运行版本；崩溃原因暂不能判断。",
+      "evidence_refs": ["E1"],
+      "disclaimer": "本报告仅整理日志中已存在的信息，不确认根因。"
+    },
+    "environment": {
+      "game_version": null,
+      "java_version": "21.0.5",
+      "os": "Windows 11",
+      "loader": "NeoForge",
+      "loader_version": "21.1.0"
+    },
+    "model_environment": null,
+    "mods": [{ "name": "demo_mod", "version": "1.0.0" }],
+    "evidence": [
+      {
+        "id": "E1",
+        "type": "exception",
+        "start_line": 8,
+        "end_line": 10,
+        "content": "java.lang.RuntimeException: Mod demo_mod requires minecraft 1.20.4\n\tat net.neoforged.fml.ModLoader.validate(ModLoader.java:120)\n\t... 4 more",
+        "truncated": false
+      }
+    ],
+    "missing_information": [
+      "实际启动配置使用的 Minecraft 版本：日志中同时出现 1.20.4 与 1.21.1。",
+      "启动器中的实例/配置截图或版本文件：用于确认实际运行版本。"
+    ],
+    "conflicts": {
+      "game_version": ["1.20.4", "1.21.1"]
+    },
+    "warnings": []
+  },
+  "expectations": [
+    "Environment 明确标注 game_version 存在冲突，并同时列出 1.20.4 与 1.21.1。",
+    "不得选择其中一个作为“实际版本”，也不得省略另一个。",
+    "Missing Information 要求玩家确认实际启动配置，而不是重复已给出的版本号。",
+    "Possible Causes 可以说明版本不匹配是待验证方向，但必须标注为推测并保留冲突。",
+    "回复草稿用中文，礼貌地请玩家确认实际版本。"
+  ],
+  "forbidden": [
+    "把 game_version 写成 1.20.4 或 1.21.1 中任意一个确定值",
+    "忽略 conflicts 字段",
+    "声称已确认版本不匹配是根因"
+  ]
+}

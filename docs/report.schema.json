@@ -1,0 +1,151 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/yuanvesper/veyra/blob/main/docs/report.schema.json",
+  "title": "Veyra triage report contract",
+  "description": "Veyra CLI --format json 的稳定数据契约（schema_version 1.0.0）。证据 ID 与行号由 Python 生成，消费方不得重新编号。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tool",
+    "mode",
+    "summary",
+    "environment",
+    "model_environment",
+    "mods",
+    "evidence",
+    "missing_information",
+    "conflicts",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "数据契约版本；不兼容变更时必须升级并同步文档。"
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "Veyra" },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "与 CLI --version 输出保持一致。"
+        }
+      }
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["local", "api"],
+      "description": "local = 未调用模型；api = 调用了 OpenAI 兼容接口。"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issue_title",
+        "symptoms",
+        "reproduction_steps",
+        "current_assessment",
+        "evidence_refs",
+        "disclaimer"
+      ],
+      "properties": {
+        "issue_title": { "type": "string", "minLength": 1 },
+        "symptoms": { "type": "string" },
+        "reproduction_steps": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "current_assessment": { "type": "string" },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^E[0-9]+$" },
+          "description": "只能引用 evidence 中已存在的 ID。"
+        },
+        "disclaimer": { "type": "string" }
+      }
+    },
+    "environment": { "$ref": "#/definitions/environment" },
+    "model_environment": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/definitions/environment" }
+      ],
+      "description": "仅 API 模式非 null：模型自己报告的环境值，未与日志核对，绝不覆盖 environment。"
+    },
+    "mods": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "version"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 }
+        }
+      },
+      "description": "日志中明确出现的 Mod；不推测未出现的版本。"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "start_line", "end_line", "content", "truncated"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^E[0-9]+$" },
+          "type": {
+            "type": "string",
+            "description": "exception / caused_by / suppressed / suspicious_text 等提取类型。"
+          },
+          "start_line": { "type": "integer", "minimum": 1 },
+          "end_line": { "type": "integer", "minimum": 1 },
+          "content": { "type": "string" },
+          "truncated": { "type": "boolean" }
+        }
+      }
+    },
+    "missing_information": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "conflicts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" },
+        "minItems": 1
+      },
+      "description": "同一字段出现多个候选值时的原始候选；对应 environment 字段为 null。"
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "校验阶段的真实警告，不包含普通运行日志。"
+    }
+  },
+  "definitions": {
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "game_version",
+        "java_version",
+        "os",
+        "loader",
+        "loader_version"
+      ],
+      "properties": {
+        "game_version": { "type": ["string", "null"] },
+        "java_version": { "type": ["string", "null"] },
+        "os": { "type": ["string", "null"] },
+        "loader": { "type": ["string", "null"] },
+        "loader_version": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

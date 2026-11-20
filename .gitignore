@@ -24,3 +24,7 @@ Thumbs.db
 
 # 运行产物（如不希望纳入版本管理，可取消注释）
 # report.md
+
+# 真实崩溃日志：不得提交（测试使用 tests/fixtures/ 下的合成日志）
+real_crash.log
+*.real-crash.log

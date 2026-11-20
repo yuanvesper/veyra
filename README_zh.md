@@ -11,9 +11,9 @@
 
 [English](./README.md) | **简体中文**
 
-Veyra 是一个通用的、本地运行的游戏 Mod 崩溃日志整理命令行工具。它用 Python 从日志中提取异常证据、分配证据 ID，并渲染结构化 Markdown 问题报告。证据提取与行号映射机制不依赖具体游戏引擎，当前正则库优先针对 Java/Minecraft 生态进行了深度优化。可选的 DeepSeek API 模式可以补全叙述字段，但模型只能引用 Python 提取出的证据 ID —— 报告中的行号由 Python 控制。
+Veyra 是一个通用的、本地运行的游戏 Mod 崩溃日志整理命令行工具。它用 Python 从日志中提取异常证据、分配证据 ID，并渲染结构化 Markdown 问题报告。证据提取与行号映射机制不依赖具体游戏引擎，当前正则库优先针对 Java/Minecraft 生态进行了深度优化。可选的 DeepSeek API 模式可以补全叙述字段，但模型只能引用 Python 提取出的证据 ID —— 报告中的行号由 Python 控制。机器可读的 JSON 模式（`--format json`，`schema_version` 1.0.0）输出同一份结构化分析结果，字段说明见 [docs/json-contract.md](docs/json-contract.md)。
 
-仓库中还包含一个用于对话侧问题整理的 Agent Skill，见 [skills/mod-issue-triage/SKILL.md](skills/mod-issue-triage/SKILL.md)。
+仓库中还包含一个 Agent Skill，它把 JSON 输出转换为带证据引用的分析与维护者回复草稿，见 [skills/mod-issue-triage/SKILL.md](skills/mod-issue-triage/SKILL.md) 与 [Skill 工作流](#skill-workflow)。
 
 <a id="toc"></a>
 ## 📖 Table of Contents / 目录
@@ -25,6 +25,7 @@ Veyra 是一个通用的、本地运行的游戏 Mod 崩溃日志整理命令行
 | [Quick Start](#quick-start) | [快速开始](#quick-start) |
 | [Features](#features) | [功能特性](#features) |
 | [How it works](#how-it-works) | [工作原理](#how-it-works) |
+| [Skill workflow](#skill-workflow) | [Skill 工作流](#skill-workflow) |
 | [Installing the Skill files](#install-skill) | [安装 Skill 文件](#install-skill) |
 | [Limitations](#limitations) | [已知限制](#limitations) |
 | [Roadmap](#roadmap) | [路线图](#roadmap) |
@@ -46,10 +47,13 @@ Veyra 是一个通用的、本地运行的游戏 Mod 崩溃日志整理命令行
 > **核心差异** —— CLI 使用由 Python 生成的证据 ID 与行号映射来约束日志引用，降低模型辅助报告中编造行号的风险；但它不保证模型的诊断结论正确。
 
 > [!WARNING]
-> **未指定输出路径时会覆盖 `report.md`。** 如果不传 `--output`，CLI 会在**当前工作目录**生成 `report.md`，并静默覆盖同名文件且不备份。请使用 `-o <路径>` / `--output <路径>` 指定其他输出文件。
+> **未指定输出路径时会替换 `report.md`。** 如果不传 `--output`，CLI 会在**当前工作目录**生成 `report.md`，并替换同名文件且不备份。写入本身是原子的（临时文件 + `os.replace`），缺失的父目录会自动创建；当输出路径与输入日志是同一个文件时，CLI 会**拒绝写入**。如需保留旧报告，请使用 `-o <路径>` / `--output <路径>`。
 
 > [!IMPORTANT]
-> **Skill 与 CLI 没有集成。** Agent Skill（`skills/mod-issue-triage/`）是一组对话规范；Python CLI（`triage_agent.py`）负责提取、校验和渲染报告。两者**没有代码级的自动集成**：Skill **不会**在后台调用 CLI，CLI 也不会加载 Skill。它们需要分别使用。
+> **Skill 与 CLI 通过手动交接连接，而不是代码集成。** 先运行 CLI 并保存 JSON，再把该 JSON（粘贴为文本，或在你的客户端支持时作为附件提供）与玩家 Issue 文本一起交给 Skill。Skill 绝不会调用 CLI，CLI 也不会加载 Skill，并且不会自动向 GitHub 发送任何内容。
+
+> [!NOTE]
+> **Skill 消费 JSON 契约（`schema_version` 1.0.0）。** `--format json` 输出 [docs/json-contract.md](docs/json-contract.md) 中定义的契约（JSON Schema：[docs/report.schema.json](docs/report.schema.json)）。Skill 会先校验它，只引用其中**已经存在**的证据 ID，并生成供维护者自行修改、手动发送的回复草稿。
 
 > [!CAUTION]
 > **API 模式稳定性。** DeepSeek API 模式目前只经历过极少量测试，连接稳定性与返回格式**不作保证**。本地模式不需要 API Key，也不需要网络。
@@ -62,9 +66,7 @@ Veyra 是一个通用的、本地运行的游戏 Mod 崩溃日志整理命令行
 TRIAGE_LOCAL_MODE=1 python triage_agent.py demo/sample-crash.log
 ```
 
-<!-- 建议在 GitHub 网页端手动上传一张终端运行截图，并替换下方链接 -->
-> 📸 **Screenshot placeholder:**
-> `![Veyra CLI Demo](link-to-your-screenshot.png)`
+<img width="1280" height="765" alt="Screenshot 2026-11-07 000631" src="https://github.com/user-attachments/assets/a5741212-7dd2-46f6-a96d-3ad35aab6cf1" />
 
 > 💡 **还没配好环境？想先看效果？** 可以直接查看 [Demo 预览报告](demo/expected-report-preview.md)，这就是跑完一次会得到的结果。
 
@@ -95,6 +97,25 @@ TRIAGE_LOCAL_MODE=1 python triage_agent.py demo/sample-crash.log
 ```powershell
 python triage_agent.py
 ```
+
+### JSON 输出（机器可读）
+
+使用 `--format json` 可将同一份分析结果输出为结构化对象。不传 `-o` 时，JSON 写入 **stdout**，不会在磁盘上生成文件；进度与错误信息写入 **stderr**，因此 stdout 始终是可解析的完整 JSON。
+
+```powershell
+# 输出到 stdout
+$env:TRIAGE_LOCAL_MODE = "1"
+python triage_agent.py demo/sample-crash.log --format json
+
+# 写入文件（原子替换，安全规则与 report.md 相同）
+python triage_agent.py demo/sample-crash.log --format json -o result.json
+```
+
+```bash
+TRIAGE_LOCAL_MODE=1 python triage_agent.py demo/sample-crash.log --format json | python -m json.tool
+```
+
+`-o` 在两种格式下含义相同：写入指定路径的文件。只有“JSON 模式 + 不传 `-o`”才会打印到 stdout。字段级契约见 [docs/json-contract.md](docs/json-contract.md)。
 
 ### API mode (optional) / API 模式（可选）
 
@@ -133,18 +154,23 @@ python triage_agent.py demo/sample-crash.log -o report-ollama.md
 
 配置 `LLM_*` 会覆盖对应的 `DEEPSEEK_*`，因此无需改代码即可接入 Kimi、Ollama 及其他 OpenAI 兼容服务。
 
-报告路径可通过 `-o <路径>` 或 `--output <路径>` 指定（例如 `python triage_agent.py demo/sample-crash.log -o my-report.md`）；不指定时仍为工作目录下的 `report.md`。
+报告路径可通过 `-o <路径>` 或 `--output <路径>` 指定（例如 `python triage_agent.py demo/sample-crash.log -o my-report.md`）；不指定时仍为工作目录下的 `report.md`。`python triage_agent.py --help` 显示中文用法，`python triage_agent.py --version` 打印版本号。
 
 <a id="features"></a>
 ## 🚀 Features / 功能特性
 
-- **无需 API Key 的本地模式**（`TRIAGE_LOCAL_MODE=1` 或未配置 `DEEPSEEK_API_KEY`）：读取日志、用正则提取证据、按规则生成 8 个字段、执行校验并写出 `report.md`。
+- **无需 API Key 的本地模式**（`TRIAGE_LOCAL_MODE=1`，或未配置 `LLM_API_KEY` / `DEEPSEEK_API_KEY`）：读取日志、用正则提取证据、从日志文本中提取运行环境、按规则生成 8 个字段、执行校验并写出 `report.md`。
+- **环境信息抽取**（`extract_environment`）：只读取日志中明确写出的内容——`Minecraft Version:`、`Java Version:`、`Operating System:`、`Loading Minecraft <版本> with <加载器> <版本>`、`Found mod file <名称>-<版本>.jar`，以及崩溃报告中的 `Mod List` 表格。缺失字段保持 `null`；同一字段出现多个不同值时，该字段留空并把这些候选值写进“还需要的信息”，而不是替用户猜一个。**本地模式与 API 模式都执行同一套 Python 抽取**，同一份日志不会因为是否调用模型而得到不同的环境事实。
+- **机器可读 JSON 契约**（`--format json`，`schema_version` 1.0.0）：从与 Markdown 相同的已校验分析对象输出 `tool`、`mode`、`summary`、`environment`、`model_environment`、`mods`、`evidence`、`missing_information`、`conflicts`、`warnings`。Python 的环境事实始终为准；API 模式下模型自己报告的环境值单独保存在 `model_environment`，绝不覆盖前者。
+- **安全写入报告**（`write_report_text`）：自动创建缺失的父目录，先写同目录临时文件再用 `os.replace` 替换目标文件，因此写入失败不会留下半截报告；输出路径指向输入日志时直接拒绝写入（退出码 2）。
 - **异常证据提取**：支持 Java 异常/错误标题行（`Exception` / `Error` / `Fatal`）、`at ...` 堆栈行、`... N more`、`Caused by:` 块（含 NeoForge 风格的 `Caused by 0:` / `Caused by 1:` 编号）、`Suppressed:` 块，以及 `Exception in thread "..."` 前缀。
 - **证据 ID 与行号映射**：Python 脚本提取证据并分配唯一 ID（如 E1、E2）。模型接收带有 ID 的提取证据，并被要求只引用这些有效 ID；最终报告中的行号由 Python 根据证据 ID 映射生成。
 - **提示词注入检测**：命中常见注入短语的行会被记录为 `suspicious_text` 证据，绝不会被执行。
 - **截断**：单个证据块最多保留 50 行堆栈，全部证据内容最多 50000 字符，截断时标记 `truncated` 与 `[已截断]`。
 - **渲染前校验**：检查 8 个必需字段；剔除不存在的证据 ID 并警告；对无法在证据中找到依据的环境值、确定性根因表述、文本字段中的行号引用分别给出警告。
 - **可选的 OpenAI 兼容 API 模式**：仅使用 Python 标准库调用任何 OpenAI 兼容的 chat completions 接口（DeepSeek、Kimi/Moonshot、本地 Ollama 等），并针对认证失败、余额不足、限流、服务端错误、超时与网络错误给出明确处理。
+- **基于证据的 Skill 分析**：`skills/mod-issue-triage/` 接收 JSON 契约与玩家 Issue 文本，输出 7 段分析：日志事实只引用已存在的证据 ID，玩家陈述与 AI 推测分别标注，冲突的环境值保持可见。分析前可用标准库校验器（`skills/mod-issue-triage/scripts/validate_issue_json.py`）检查 JSON。
+- **维护者回复草稿**：Skill 针对三种场景（初次回复、调查进展、解决方案）生成回复草稿，语言跟随玩家，供维护者修改后手动发送，不会自动发布。
 
 <a id="how-it-works"></a>
 ## 🧠 How it works / 工作原理
@@ -154,10 +180,15 @@ python triage_agent.py demo/sample-crash.log -o report-ollama.md
 ```text
 veyra/
 ├── triage_agent.py       # Python CLI entry point
-├── skills/               # Agent Skill files for DSH/Claude Code
+├── skills/mod-issue-triage/  # Agent Skill: JSON → analysis → reply draft
+│   ├── SKILL.md
+│   ├── references/report-template.md
+│   ├── scripts/validate_issue_json.py
+│   └── evals/            # 10 synthetic cases + review criteria
 ├── scripts/              # Secure installer scripts (PS1 / SH)
+├── tests/                # unittest regression tests
 ├── demo/                 # Synthetic log and expected report
-├── docs/                 # Architecture and MVP docs
+├── docs/                 # JSON contract, schema, and MVP status
 └── README.md
 ```
 
@@ -175,9 +206,32 @@ graph TD
 2. **提取证据**（`extract_evidence`）：逐行扫描日志，聚合异常块，记录真实行号，检测疑似注入文本，分配 `E1...` ID，并应用截断。
 3. **组装模型输入**（`build_messages`）或**本地规则输出**（`build_local_output`）：系统提示词要求模型只引用给定证据 ID、不编造行号、把日志文本当数据、不给出确定性根因、未知环境值一律用 `null`。
 4. **校验**（`validate_output`）：确认 8 个字段，过滤未知证据 ID，并对可疑内容给出警告。
-5. **渲染**（`render_report`）：写出 `report.md`；证据小节中的每一处行号都来自 Python 的证据表，而不是模型。
+5. **渲染**（`render_report`）：原子地写出报告；证据小节中的每一处行号都来自 Python 的证据表，而不是模型。
+6. **序列化**（`build_report_contract` / `serialize_contract`）：Markdown 与 JSON 来自同一个已校验的分析对象。证据条目原样复制——ID、类型、内容和真实行号绝不重新生成或重新编号。
 
 8 个字段为：`issue_title`、`symptoms`、`environment`、`reproduction_steps`、`missing_information`、`current_assessment`、`evidence_refs`、`disclaimer`。
+
+<a id="skill-workflow"></a>
+## 🤖 Skill 工作流：JSON → 维护者回复草稿
+
+Skill（`skills/mod-issue-triage/`）是一组提示词层面的工作流，不是一个服务。它可以在任何能加载该 Skill、并能接收文本的聊天客户端中工作。从 CLI 到 Skill 的交接刻意保持手动：
+
+1. **分析日志并保存 JSON。**
+   ```bash
+   TRIAGE_LOCAL_MODE=1 python triage_agent.py crash.log --format json -o issue.json
+   ```
+2. **给 Skill 两类输入：** JSON（粘贴为文本；若客户端支持附件，也可以附上文件）与玩家 Issue——标题、描述、复现步骤、预期/实际行为，以及已经尝试过的方法。玩家描述是可选的；如果缺失，Skill 必须说明这是“仅基于日志”的分析，不能编造上下文。
+3. **让它先校验。** 当 `schema_version` 不受支持（不是已知的 `1.x`）、缺少必需字段或证据结构损坏时，Skill 会停止，而不会静默修复契约或猜测。
+4. **阅读 7 个部分：** Issue Overview、Environment、Evidence Analysis、Possible Causes、Missing Information、Recommended Actions、Maintainer Reply Draft。每条日志事实都带有 JSON 中已有的证据 ID 与真实行号；玩家声称的内容保持“玩家陈述”标签；Skill 自己的假设标记为推测。
+5. **自行修改并发送回复。** 草稿用于复制到 Issue 讨论串；回复语言跟随玩家（无法判断时用英文）。不会自动发布。
+
+可以先用与 Skill 相同的规则预检 JSON：
+
+```bash
+python skills/mod-issue-triage/scripts/validate_issue_json.py issue.json
+```
+
+回复草稿覆盖三种情况：**A. 初次回复**（还不足以调查，只索取能缩小范围的信息）、**B. 调查进展**（发现了相关证据，但原因尚未确认）、**C. 解决方案**（证据支持明确操作）。如果证据只支持 B，Skill 不得写成 C。
 
 <a id="install-skill"></a>
 ## 📦 Installing the Skill files (optional) / 安装 Skill 文件（可选）
@@ -208,19 +262,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 - **当前以 Java 日志为主。** 当前的正则引擎针对 Java 系游戏（如 Minecraft）进行了深度优化；其他引擎（如 Unity、Unreal）的日志格式可能需要额外适配。
 - **基于关键词的注入检测。** 改写或编码后的注入文本可能检测不到。
 - **仅支持 UTF-8 日志。** 其他编码会以替换字符解码，而不是转换。
-- **会覆盖 `report.md`**，无提示、无备份（见上方警告）。
+- **会替换 `report.md`**，无提示、无备份（见上方警告）。替换是原子的，不会与旧文件混合，但如果不传 `-o`，上一份报告仍然会丢失。
 - **API 模式测试极少。** 模型行为、JSON 格式与网络可靠性都可能变化。
+- **JSON 契约为 v1.0.0。** 顶层结构与证据字段在本版本内固定；新增可选字段需要升级 `schema_version` 并同步契约文档。消费方应依据 `schema_version` 判断兼容性，而不是工具版本号。
 - **没有沙箱隔离。** CLI 会读取你指定的日志路径，并在工作目录写出 `report.md`。
-- **Skill 与 CLI 相互独立。** Skill 不会运行 CLI，CLI 也不依赖 Skill。
+- **Skill 与 CLI 相互独立。** Skill 不会运行 CLI，需要用户自行提供 JSON；CLI 不依赖 Skill。Skill 的分析质量由人工审查，**没有**自动化输出测试覆盖。
+- **Skill 输出只是草稿，不会执行动作。** 回复草稿不会发布到任何地方，由维护者修改后发送；不会创建或关闭 Issue。
 
 <a id="roadmap"></a>
 ## 🗺️ Roadmap (future plans, not implemented) / 路线图（未来计划，尚未实现）
 
-本节内容在当前版本中**均不存在**，仅作为后续阶段的想法，不是对现有功能的描述。
+本节内容在当前版本中**均不存在**，仅作为后续阶段的想法，不是对现有功能的描述。此前阶段已交付：安全安装脚本（`scripts/`）、CI 工作流（`.github/workflows/test.yml`）、演示预览报告（`demo/expected-report-preview.md`）。
 
-- Windows 或类 Unix 系统的安装脚本。
-- 持续集成（CI）工作流。
-- 用于演示的预期报告预览文件。
 - 多日志批量分析。
 - 可配置的报告模板。
 - 支持更多游戏引擎（Unity、Unreal、Godot）及其崩溃日志格式。
@@ -228,7 +281,14 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 <a id="contributing"></a>
 ## 🤝 Contributing / 参与贡献
 
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。本地测试无需 API Key：在本地模式下对 `demo/sample-crash.log` 运行 CLI 即可。
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。本地测试无需 API Key：
+
+```bash
+python triage_agent.py demo/sample-crash.log -o /tmp/veyra-check.md
+python triage_agent.py demo/sample-crash.log --format json -o /tmp/veyra-check.json
+python skills/mod-issue-triage/scripts/validate_issue_json.py /tmp/veyra-check.json
+python -m unittest discover -s tests
+```
 
 <a id="support"></a>
 ## ⭐ Support / 支持

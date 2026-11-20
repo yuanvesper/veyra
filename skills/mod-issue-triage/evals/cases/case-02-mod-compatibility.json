@@ -1,0 +1,66 @@
+{
+  "case_id": "02-mod-compatibility",
+  "title": "多个 Mod 但证据不足：不能仅凭数量认定冲突",
+  "scenario": "日志里有 6 个 Mod，只有一个 Mixin 应用失败证据。玩家直接问是不是 Mod 冲突。Skill 不能因为 Mod 多就断言冲突，应给出待验证假设和最小化测试建议。",
+  "player_issue": {
+    "language": "zh",
+    "text": "装了一堆 Mod 之后启动就崩了，是不是 Mod 冲突？我装了大概六七个。"
+  },
+  "report": {
+    "schema_version": "1.0.0",
+    "tool": { "name": "Veyra", "version": "1.2.0" },
+    "mode": "local",
+    "summary": {
+      "issue_title": "Mixin 应用失败导致启动崩溃",
+      "symptoms": "游戏启动阶段崩溃，日志显示 example_library 的 Mixin 应用失败。",
+      "reproduction_steps": [],
+      "current_assessment": "日志显示 example_library 的一个 Mixin 在应用时失败，可能与加载器或依赖版本不匹配有关，但尚未确认。",
+      "evidence_refs": ["E1"],
+      "disclaimer": "本报告仅整理日志中已存在的信息，不确认根因。"
+    },
+    "environment": {
+      "game_version": "1.21.1",
+      "java_version": "21.0.5",
+      "os": "Windows 11",
+      "loader": "NeoForge",
+      "loader_version": "21.1.0"
+    },
+    "model_environment": null,
+    "mods": [
+      { "name": "demo_mod", "version": "1.0.0" },
+      { "name": "example_library", "version": "2.3.4" },
+      { "name": "core_utils", "version": "5.6.7" },
+      { "name": "visual_tweaks", "version": "0.9.2" },
+      { "name": "map_plus", "version": "3.1.0" },
+      { "name": "sound_pack", "version": "1.4.1" }
+    ],
+    "evidence": [
+      {
+        "id": "E1",
+        "type": "exception",
+        "start_line": 30,
+        "end_line": 34,
+        "content": "org.spongepowered.asm.mixin.throwables.MixinApplyError: Mixin example_library.mixins.json:CompatMixin from mod example_library failed\n\tat org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:351)\nCaused by: java.lang.NoSuchMethodError: 'void net.minecraft.world.level.Level.setBlock(net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, int)'\n\tat example_library.CompatMixin.inject(CompatMixin.java:41)\n\t... 9 more",
+        "truncated": false
+      }
+    ],
+    "missing_information": [
+      "完整 Mod 列表：用于判断是否还有其他 Mod 也改动了同一个方法。",
+      "是否为全新实例测试：用于排除旧配置或残留文件。"
+    ],
+    "conflicts": {},
+    "warnings": []
+  },
+  "expectations": [
+    "不得仅凭 Mod 数量或“装了很多 Mod”就断言 Mod 冲突。",
+    "指出 E1 是 Mixin 应用失败，并说明它支持“兼容性/版本不匹配”这一方向，但仍属推测。",
+    "Recommended Actions 建议最小化 Mod 集或二分排查，而不是让玩家一次性卸载全部 Mod。",
+    "Missing Information 只询问 JSON 中确实缺少的内容。",
+    "回复草稿用中文，直接回答“是否冲突”的问题，但明确说目前不能确认。"
+  ],
+  "forbidden": [
+    "断言已找到冲突的 Mod 组合",
+    "建议玩家重装游戏或删除存档作为首选方案",
+    "创造 E2 等不存在的证据"
+  ]
+}

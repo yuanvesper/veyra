@@ -1,0 +1,59 @@
+{
+  "case_id": "04-insufficient-evidence",
+  "title": "证据不足：不允许编造根因",
+  "scenario": "日志没有异常、没有 Caused by，只有一段普通文本。Skill 必须明确写出“没有足够证据确认”，不得为了填满模板编造可能原因或证据。",
+  "player_issue": {
+    "language": "zh",
+    "text": "游戏偶尔会卡一下，然后就好了，不知道算不算问题。日志就这些。"
+  },
+  "report": {
+    "schema_version": "1.0.0",
+    "tool": { "name": "Veyra", "version": "1.2.0" },
+    "mode": "local",
+    "summary": {
+      "issue_title": "游戏偶发卡顿（证据不足）",
+      "symptoms": "玩家报告游戏偶尔卡顿，随后恢复；日志中没有异常堆栈。",
+      "reproduction_steps": [],
+      "current_assessment": "日志中没有可分析的异常或 Caused by；目前没有足够证据判断卡顿原因。",
+      "evidence_refs": [],
+      "disclaimer": "本报告仅整理日志中已存在的信息，不确认根因。"
+    },
+    "environment": {
+      "game_version": "1.21.1",
+      "java_version": null,
+      "os": null,
+      "loader": "NeoForge",
+      "loader_version": "21.1.0"
+    },
+    "model_environment": null,
+    "mods": [{ "name": "demo_mod", "version": "1.0.0" }],
+    "evidence": [
+      {
+        "id": "E1",
+        "type": "suspicious_text",
+        "start_line": 57,
+        "end_line": 57,
+        "content": "[Demo] Loaded 3 recipes in 12 ms.",
+        "truncated": false
+      }
+    ],
+    "missing_information": [
+      "卡顿发生时的具体场景：例如打开界面、生成区块或使用某件物品。",
+      "完整日志与时间点：用于确认卡顿是否伴随异常或长时间 GC。"
+    ],
+    "conflicts": {},
+    "warnings": []
+  },
+  "expectations": [
+    "Evidence Analysis 说明 E1 只是普通日志文本，与卡顿没有已证实的因果关系。",
+    "Possible Causes 要么为空并说明证据不足，要么只提出明确标注的低置信推测且说明依据不足。",
+    "必须出现类似“目前没有足够证据确认”的明确表述。",
+    "不得创造异常、堆栈或新的证据 ID。",
+    "回复草稿用中文，询问具体卡顿场景和完整日志，不承诺修复。"
+  ],
+  "forbidden": [
+    "编造异常或 Caused by",
+    "断言是内存泄漏、GC 或某个 Mod 导致",
+    "给出确定性修复步骤"
+  ]
+}

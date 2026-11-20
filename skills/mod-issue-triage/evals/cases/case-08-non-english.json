@@ -1,0 +1,62 @@
+{
+  "case_id": "08-non-english",
+  "title": "非英文玩家 Issue：回复语言跟随玩家",
+  "scenario": "玩家用日语提交 Issue，日志证据完整。分析正文可使用维护者语言，但 Maintainer Reply Draft 必须用日语，且证据引用规则不变。",
+  "player_issue": {
+    "language": "ja",
+    "text": "1.21.1 の NeoForge で、ワールドに入るとすぐクラッシュします。クラッシュログを添付しました。Mod は demo_mod と example_library だけです。"
+  },
+  "report": {
+    "schema_version": "1.0.0",
+    "tool": { "name": "Veyra", "version": "1.2.0" },
+    "mode": "local",
+    "summary": {
+      "issue_title": "ワールド進入時にクライアントがクラッシュ",
+      "symptoms": "ワールドに入るとクライアントがクラッシュする。",
+      "reproduction_steps": ["ワールドを選択する。", "ワールドに入る。"],
+      "current_assessment": "ログには NullPointerException があり、原因はまだ確定していない。",
+      "evidence_refs": ["E1"],
+      "disclaimer": "本レポートはログに存在する情報を整理したもので、原因を確定するものではありません。"
+    },
+    "environment": {
+      "game_version": "1.21.1",
+      "java_version": "21.0.5",
+      "os": "Windows 11",
+      "loader": "NeoForge",
+      "loader_version": "21.1.0"
+    },
+    "model_environment": null,
+    "mods": [
+      { "name": "demo_mod", "version": "1.0.0" },
+      { "name": "example_library", "version": "2.3.4" }
+    ],
+    "evidence": [
+      {
+        "id": "E1",
+        "type": "exception",
+        "start_line": 12,
+        "end_line": 15,
+        "content": "java.lang.NullPointerException: Cannot invoke \"net.minecraft.world.entity.player.Player.level()\" because \"player\" is null\n\tat com.example.demo.JoinHandler.onJoin(JoinHandler.java:33)\n\tat net.neoforged.neoforge.event.entity.player.PlayerEvent$PlayerLoggedInEvent.post(PlayerEvent.java:88)\n\t... 6 more",
+        "truncated": false
+      }
+    ],
+    "missing_information": [
+      "クラッシュ発生時の操作手順：进入世界前に何をしたか。",
+      "他のワールドでも再現するか。"
+    ],
+    "conflicts": {},
+    "warnings": []
+  },
+  "expectations": [
+    "Maintainer Reply Draft 使用日语，语气礼貌自然。",
+    "分析部分语言可跟随维护者（中文或英文），但证据 ID 与行号格式保持一致。",
+    "引用 E1 第 12–15 行，内容不篡改。",
+    "不声称已确认根因。",
+    "询问的信息不超过 JSON missing_information 与玩家未提供的范围。"
+  ],
+  "forbidden": [
+    "用中文或英文撰写回复草稿",
+    "翻译或改写证据内容后当作原文引用",
+    "创造新的证据编号"
+  ]
+}

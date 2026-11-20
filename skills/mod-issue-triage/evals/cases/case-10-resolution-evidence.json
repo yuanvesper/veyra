@@ -1,0 +1,70 @@
+{
+  "case_id": "10-resolution-evidence",
+  "title": "已有明确解决证据：可生成 Resolution Response",
+  "scenario": "两条证据共同指向 example_library 2.3.4 是为 Minecraft 1.20.4 构建、却在 1.21.1 上加载。证据足以支持具体处理建议，因此可生成 Resolution Response，但仍不得编造兼容版本号或承诺时间。",
+  "player_issue": {
+    "language": "en",
+    "text": "After updating my pack, the game crashes on startup with a mod loading error. Here is the log."
+  },
+  "report": {
+    "schema_version": "1.0.0",
+    "tool": { "name": "Veyra", "version": "1.2.0" },
+    "mode": "local",
+    "summary": {
+      "issue_title": "Startup crash: example_library built for a different Minecraft version",
+      "symptoms": "The game crashes during startup with a mod loading error.",
+      "reproduction_steps": ["Start the game with the current mod set."],
+      "current_assessment": "The log states that example_library 2.3.4 requires Minecraft 1.20.4 and fails to load on 1.21.1.",
+      "evidence_refs": ["E1", "E2"],
+      "disclaimer": "This report only organizes information present in the log; it does not confirm a root cause."
+    },
+    "environment": {
+      "game_version": "1.21.1",
+      "java_version": "21.0.5",
+      "os": "Windows 11",
+      "loader": "NeoForge",
+      "loader_version": "21.1.0"
+    },
+    "model_environment": null,
+    "mods": [
+      { "name": "demo_mod", "version": "1.0.0" },
+      { "name": "example_library", "version": "2.3.4" }
+    ],
+    "evidence": [
+      {
+        "id": "E1",
+        "type": "exception",
+        "start_line": 9,
+        "end_line": 12,
+        "content": "java.lang.RuntimeException: Mod file example_library-2.3.4.jar requires minecraft 1.20.4\n\tat net.neoforged.fml.ModLoader.validate(ModLoader.java:118)\n\tat net.neoforged.fml.ModLoader.load(ModLoader.java:203)\n\t... 5 more",
+        "truncated": false
+      },
+      {
+        "id": "E2",
+        "type": "exception",
+        "start_line": 40,
+        "end_line": 43,
+        "content": "java.lang.NoSuchMethodError: 'void net.minecraft.world.level.Level.setBlock(net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, int)'\n\tat example_library.CompatMixin.inject(CompatMixin.java:41)\n\tat org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:351)\n\t... 9 more",
+        "truncated": false
+      }
+    ],
+    "missing_information": [
+      "Whether a build of example_library for Minecraft 1.21.1 is available.",
+      "Whether the crash persists with only demo_mod and example_library installed."
+    ],
+    "conflicts": {},
+    "warnings": []
+  },
+  "expectations": [
+    "选择 Resolution Response 场景，并基于 E1、E2 说明证据支持的具体建议。",
+    "建议更新或移除与 1.20.4 绑定的 example_library，并说明依据；不得编造具体新版本号。",
+    "仍保留不确定性表述：不承诺修复时间，不保证该建议一定解决问题。",
+    "回复草稿用英文，礼貌、具体、简洁。",
+    "引用 E1 第 9–12 行、E2 第 40–43 行，内容不改写。"
+  ],
+  "forbidden": [
+    "编造 example_library 2.3.5 等 JSON 中不存在的版本号",
+    "声称这是官方确认的根因",
+    "承诺修复时间"
+  ]
+}
