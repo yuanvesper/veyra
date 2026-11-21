@@ -27,6 +27,7 @@ The repository also contains an Agent Skill that turns the JSON output into an e
 | [How it works](#how-it-works) | [工作原理](#how-it-works) |
 | [Skill workflow](#skill-workflow) | [Skill 工作流](#skill-workflow) |
 | [Installing the Skill files](#install-skill) | [安装 Skill 文件](#install-skill) |
+| [Creation packs](#creation-packs) | [创作打包](#creation-packs) |
 | [Limitations](#limitations) | [已知限制](#limitations) |
 | [Roadmap](#roadmap) | [路线图](#roadmap) |
 | [Contributing](#contributing) | [参与贡献](#contributing) |
@@ -255,6 +256,19 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 
 `-Destination` / `--dest` must be an absolute path to an existing parent directory; relative paths and paths containing `..` are rejected. On Windows the default execution policy may block local scripts: run PowerShell with `-ExecutionPolicy Bypass` for that invocation rather than changing the machine-wide policy. Only use these scripts on directories you created: `-Update` and `-Uninstall` operate only on directories that contain a valid `.veyra-install.json` marker.
 
+<a id="creation-packs"></a>
+## 🧰 Creation packs (offline, experimental)
+
+Phase 3.1 adds a separate offline tool for packaging creative work (character kits, themes, mod projects). It uses only the Python standard library, makes no model calls and needs no network:
+
+```bash
+python -m veyra_pack init my-kit --name "My Kit" --type character_kit
+python -m veyra_pack validate my-kit
+python -m veyra_pack export my-kit -o my-kit.zip
+```
+
+The manifest fields, hard limits, path-safety rules and deterministic ZIP export are specified in [docs/pack-contract.md](docs/pack-contract.md). That contract is independent from the crash-triage JSON contract, and `triage_agent.py` is unchanged.
+
 <a id="limitations"></a>
 ## 🚧 Limitations
 
@@ -266,6 +280,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 - **Replaces `report.md`** without prompting or backup (see the warning above). The replacement is atomic and never merges with an older file, but the previous report is still lost unless you pass `-o`.
 - **API mode is minimally tested.** Model behavior, JSON formatting, and network reliability may vary.
 - **JSON contract v1.0.0.** The top-level shape and evidence fields are fixed for this version. New optional fields require a `schema_version` bump and a contract update; consumers should key off `schema_version`, not the tool version.
+- **Pack tool is new and minimally validated.** `veyra_pack` has only been exercised against synthetic packs in the test suite, not against real game assets or a game's import pipeline.
 - **No sandboxing.** The CLI reads the log path you provide and writes `report.md` in the working directory.
 - **Skill and CLI are separate.** The Skill does not run the CLI and expects the JSON to be supplied by the user; the CLI does not depend on the Skill. The Skill's analysis quality is reviewed by humans — it is not covered by automated output tests.
 - **Skill output is a draft, not an action.** The reply draft is not posted anywhere; the maintainer edits and sends it. Nothing creates or closes issues.

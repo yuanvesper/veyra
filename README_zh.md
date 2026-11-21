@@ -27,6 +27,7 @@ Veyra 是一个通用的、本地运行的游戏 Mod 崩溃日志整理命令行
 | [How it works](#how-it-works) | [工作原理](#how-it-works) |
 | [Skill workflow](#skill-workflow) | [Skill 工作流](#skill-workflow) |
 | [Installing the Skill files](#install-skill) | [安装 Skill 文件](#install-skill) |
+| [Creation packs](#creation-packs) | [创作打包](#creation-packs) |
 | [Limitations](#limitations) | [已知限制](#limitations) |
 | [Roadmap](#roadmap) | [路线图](#roadmap) |
 | [Contributing](#contributing) | [参与贡献](#contributing) |
@@ -254,6 +255,19 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 
 `-Destination` / `--dest` 必须是已存在父目录的绝对路径；相对路径和包含 `..` 的路径会被拒绝。Windows 默认的 PowerShell 执行策略可能阻止运行本地脚本：对本次调用使用 `-ExecutionPolicy Bypass` 即可，不要修改系统级策略。请只对你自己创建的目录运行这些脚本：`-Update` 与 `-Uninstall` 只操作包含合法 `.veyra-install.json` 标记的目录。
 
+<a id="creation-packs"></a>
+## 🧰 Creation packs（离线，实验性）
+
+Phase 3.1 新增了一个独立的离线打包工具，用于把创作成果（角色套件、主题、Mod 工程等）整理成可分发的包。它只使用 Python 标准库，不调用模型、不联网：
+
+```bash
+python -m veyra_pack init my-kit --name "My Kit" --type character_kit
+python -m veyra_pack validate my-kit
+python -m veyra_pack export my-kit -o my-kit.zip
+```
+
+清单字段、硬性上限、路径安全规则与确定性 ZIP 导出在 [docs/pack-contract.md](docs/pack-contract.md) 中定义。该契约与崩溃诊断的 JSON 契约相互独立，`triage_agent.py` 未做修改。
+
 <a id="limitations"></a>
 ## 🚧 Limitations / 已知限制
 
@@ -265,6 +279,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Destination "C:\
 - **会替换 `report.md`**，无提示、无备份（见上方警告）。替换是原子的，不会与旧文件混合，但如果不传 `-o`，上一份报告仍然会丢失。
 - **API 模式测试极少。** 模型行为、JSON 格式与网络可靠性都可能变化。
 - **JSON 契约为 v1.0.0。** 顶层结构与证据字段在本版本内固定；新增可选字段需要升级 `schema_version` 并同步契约文档。消费方应依据 `schema_version` 判断兼容性，而不是工具版本号。
+- **打包工具刚实现，验证有限。** `veyra_pack` 目前只在测试中用合成包验证过，尚未用真实游戏素材或真实游戏的导入流程检验。
 - **没有沙箱隔离。** CLI 会读取你指定的日志路径，并在工作目录写出 `report.md`。
 - **Skill 与 CLI 相互独立。** Skill 不会运行 CLI，需要用户自行提供 JSON；CLI 不依赖 Skill。Skill 的分析质量由人工审查，**没有**自动化输出测试覆盖。
 - **Skill 输出只是草稿，不会执行动作。** 回复草稿不会发布到任何地方，由维护者修改后发送；不会创建或关闭 Issue。
