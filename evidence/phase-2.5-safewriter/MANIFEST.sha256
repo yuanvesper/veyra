@@ -1,0 +1,23 @@
+# SHA-256 manifest for the Phase 2.5 / SafeWriter evidence.
+# Format: <sha256>  <path>  (<bytes> bytes)
+# Paths are relative to the repository root.
+#
+# Published evidence:
+3C58A07ADEC2407C3E68D44DBDF6F587E3244C91E76CE528684A7ACABEBF09B5  evidence/phase-2.5-safewriter/README.md  (4573 bytes)
+E21DB4896BFA3F8B7A0C2A831328640BCB791BA65307834B69ACCF9F101ECB1D  evidence/phase-2.5-safewriter/design/phase-3.2.2.1-2.5R.1-production-safewriter-admission-design.sanitized.md  (251612 bytes)
+7CE9EAB09386A3F5B4DFFE5C20AA2A67D96F69E5E4D6A882C06A087CA1519B84  tests/test_creation_safewriter.py  (21643 bytes)
+662A5DBDC3711CD5989A355DC2564EB6C07EB5B47FC684BF7ACA9D3C5E4D79F6  veyra_creation/safewriter/__init__.py  (908 bytes)
+42A32BEC8C6077240DC013BB420CE1682790AC05AC0FA9A2D77FD1D75343D0A2  veyra_creation/safewriter/anchors.py  (14353 bytes)
+A57307432F2E64F793F95026080E8F89FA10B5A8C65DEBFDCEA3414B5B7A044A  veyra_creation/safewriter/errors.py  (3219 bytes)
+B3E1CF935C7ABA3FAF965D01258F53599551A03C848047B94E336DB81C421321  veyra_creation/safewriter/identities.py  (3053 bytes)
+CDC86DA8E85FE31686557E9A5755AC4FEC03C03F1D04DD00112C81C5F9E4D699  veyra_creation/safewriter/journal.py  (9511 bytes)
+6C9F08B71F3F3C28A37AE969AD81A08348195613B437617D9A78A409AD01F1E7  veyra_creation/safewriter/lock.py  (5305 bytes)
+7969E42AA4CEBDF30DE8A4AE738AE4FF4C5091CD1AB273F17EC34E994EB9C471  veyra_creation/safewriter/native.py  (19090 bytes)
+0C60A21C85A39F20F96FA000CAE54609922A9D5BB36E62DAF796BBF49B4E0406  veyra_creation/safewriter/policy.py  (8992 bytes)
+A09508500EC837132A1B45B715ECC440111FDD65E456886D9A72F1E270C2E56A  veyra_creation/safewriter/results.py  (1648 bytes)
+DB594D8DBCA5C0D1F94359B59913227D0C3622CF4C4E619EBCBA842B2B82285B  veyra_creation/safewriter/target.py  (8511 bytes)
+40E65030466F97DBB16CB001F2D3804443914CF412D267636B44AA2110C98FF3  veyra_creation/safewriter/writer.py  (34048 bytes)
+#
+# Source original, retained locally and NOT published because it contains
+# machine-specific absolute paths. The sanitized published copy is above.
+13BA6C6A8A08DC957689DECD0ECC8E766B9072BEF6F232692F4605F440B0CA15  docs/phase-3.2.2.1-2.5R.1-production-safewriter-admission-design.md  (251727 bytes)
