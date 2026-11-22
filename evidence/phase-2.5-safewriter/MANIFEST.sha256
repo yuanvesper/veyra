@@ -3,8 +3,8 @@
 # Paths are relative to the repository root.
 #
 # Published evidence:
-3C58A07ADEC2407C3E68D44DBDF6F587E3244C91E76CE528684A7ACABEBF09B5  evidence/phase-2.5-safewriter/README.md  (4573 bytes)
-E21DB4896BFA3F8B7A0C2A831328640BCB791BA65307834B69ACCF9F101ECB1D  evidence/phase-2.5-safewriter/design/phase-3.2.2.1-2.5R.1-production-safewriter-admission-design.sanitized.md  (251612 bytes)
+E45563E121EF88F75F2B468A51071DAD9821A030E1705D497A1B09A5AF683B7F  evidence/phase-2.5-safewriter/README.md  (4748 bytes)
+000AE6EAAFF4027C212B96A46334896DEC91991FC942411C84DBCA16E2F6D3D5  evidence/phase-2.5-safewriter/design/phase-3.2.2.1-2.5R.1-production-safewriter-admission-design.sanitized.md  (249023 bytes)
 7CE9EAB09386A3F5B4DFFE5C20AA2A67D96F69E5E4D6A882C06A087CA1519B84  tests/test_creation_safewriter.py  (21643 bytes)
 662A5DBDC3711CD5989A355DC2564EB6C07EB5B47FC684BF7ACA9D3C5E4D79F6  veyra_creation/safewriter/__init__.py  (908 bytes)
 42A32BEC8C6077240DC013BB420CE1682790AC05AC0FA9A2D77FD1D75343D0A2  veyra_creation/safewriter/anchors.py  (14353 bytes)

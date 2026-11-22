@@ -87,10 +87,13 @@ they are path-syntax examples, not machine-specific paths. The sanitized copy co
 
 Original and sanitized hashes:
 
-- original design: `13BA6C6A8A08DC957689DECD0ECC8E766B9072BEF6F232692F4605F440B0CA15`
+- original design (local working copy, CRLF): `13BA6C6A8A08DC957689DECD0ECC8E766B9072BEF6F232692F4605F440B0CA15`
   (251,727 bytes);
-- sanitized design: `E21DB4896BFA3F8B7A0C2A831328640BCB791BA65307834B69ACCF9F101ECB1D`
-  (251,612 bytes).
+- sanitized published design (LF): `000AE6EAAFF4027C212B96A46334896DEC91991FC942411C84DBCA16E2F6D3D5`
+  (249,023 bytes).
+
+Git normalizes line endings on commit. The local original uses CRLF; the published
+sanitized copy is LF. Line content is unchanged.
 
 ## Excluded material
 
