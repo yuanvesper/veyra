@@ -26,13 +26,13 @@ from veyra_pack.contract import (
 )
 from veyra_pack.paths import (
     PathPolicyError,
+    _root_paths_equivalent,
     check_relative_path,
     find_link_component,
     is_creation_path,
     is_link_like,
     normalize_lexical_path,
     path_key,
-    paths_equivalent,
     resolve_file,
 )
 
@@ -240,7 +240,7 @@ class ProjectStore:
                 f"cannot resolve project root: {exc}",
                 "project",
             ) from exc
-        if not paths_equivalent(declared, resolved):
+        if not _root_paths_equivalent(declared, resolved):
             raise CreationError(
                 "E_PROJECT_ROOT",
                 f"project root resolves to a different path: declared {declared}, resolved {resolved}",

@@ -9,6 +9,7 @@ read outside the project.
 
 from __future__ import annotations
 
+import ctypes
 import ntpath
 import os
 import re
@@ -32,6 +33,13 @@ _RESERVED_NAMES = {
     *(f"COM{i}" for i in range(1, 10)),
     *(f"LPT{i}" for i in range(1, 10)),
 }
+_FILE_ATTRIBUTE_REPARSE_POINT = 0x400
+_WINDOWS_LONG_PATH_CAPACITY = 32768
+_ERROR_FILE_NOT_FOUND = 2
+_ERROR_PATH_NOT_FOUND = 3
+_ERROR_FILENAME_EXCED_RANGE = 206
+_LONG_PATH_NAME_UNAVAILABLE = object()
+_GET_LONG_PATH_NAME_W = None
 
 
 def check_relative_path(rel: object) -> Issue | None:
@@ -84,10 +92,23 @@ def check_relative_path(rel: object) -> Issue | None:
 
 
 def _is_link_like(path: Path) -> bool:
+    """Return True when ``path`` is a symlink or any Windows reparse point.
+
+    ``lstat`` inspects the entry itself instead of following it.  Any metadata
+    failure is treated as unsafe.  On Windows, ``FILE_ATTRIBUTE_REPARSE_POINT``
+    covers junctions, symlinks, mount points and other reparse points, including
+    on Python versions that do not provide ``os.path.isjunction``.
+    """
+
     try:
-        if path.is_symlink():
-            return True
+        status = path.lstat()
     except OSError:
+        return True
+    if stat.S_ISLNK(status.st_mode):
+        return True
+    if os.name == "nt" and not hasattr(status, "st_file_attributes"):
+        return True
+    if getattr(status, "st_file_attributes", 0) & _FILE_ATTRIBUTE_REPARSE_POINT:
         return True
     isjunction = getattr(os.path, "isjunction", None)
     if isjunction is not None:
@@ -284,6 +305,119 @@ def paths_equivalent(left: Path | str, right: Path | str) -> bool:
     if os.name != "nt":
         return Path(left) == Path(right)
     return _windows_compare_key(left) == _windows_compare_key(right)
+
+
+def _get_long_path_name_w():
+    """Return the lazily bound ``GetLongPathNameW`` function, or ``None``."""
+
+    global _GET_LONG_PATH_NAME_W
+    if os.name != "nt":
+        return None
+    if _GET_LONG_PATH_NAME_W is _LONG_PATH_NAME_UNAVAILABLE:
+        return None
+    if _GET_LONG_PATH_NAME_W is None:
+        try:
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            function = kernel32.GetLongPathNameW
+            function.argtypes = [
+                ctypes.c_wchar_p,  # LPCWSTR
+                ctypes.c_wchar_p,  # LPWSTR
+                ctypes.c_uint32,  # DWORD
+            ]
+            function.restype = ctypes.c_uint32
+        except (AttributeError, OSError, TypeError):
+            _GET_LONG_PATH_NAME_W = _LONG_PATH_NAME_UNAVAILABLE
+            return None
+        _GET_LONG_PATH_NAME_W = function
+    return _GET_LONG_PATH_NAME_W
+
+
+def _windows_long_name(path: Path) -> tuple[str | None, int]:
+    """Return ``(long_name, 0)`` or ``(None, winerror)``.
+
+    This is only a long-name conversion helper.  It is never used as a
+    reparse-point or filesystem-identity check.
+    """
+
+    function = _get_long_path_name_w()
+    if function is None:
+        return None, 0
+    buffer = ctypes.create_unicode_buffer(_WINDOWS_LONG_PATH_CAPACITY)
+    ctypes.set_last_error(0)
+    try:
+        written = int(function(str(path), buffer, _WINDOWS_LONG_PATH_CAPACITY))
+    except (OSError, ValueError, ctypes.ArgumentError):
+        return None, 0
+    if written == 0:
+        return None, ctypes.get_last_error()
+    if written >= _WINDOWS_LONG_PATH_CAPACITY:
+        return None, _ERROR_FILENAME_EXCED_RANGE
+    return buffer.value, 0
+
+
+def _canonical_alias_path(path: Path) -> Path | None:
+    """Expand the existing prefix of ``path`` to its Windows long-name form.
+
+    Missing suffixes are preserved.  Ascent is permitted only for
+    ``ERROR_FILE_NOT_FOUND`` and ``ERROR_PATH_NOT_FOUND``; every other Win32
+    error fails closed.
+    """
+
+    current = Path(path)
+    suffix: list[str] = []
+    while True:
+        long_name, error = _windows_long_name(current)
+        if long_name is not None:
+            result = Path(long_name)
+            for part in reversed(suffix):
+                result = result / part
+            return result
+        if error not in (_ERROR_FILE_NOT_FOUND, _ERROR_PATH_NOT_FOUND):
+            return None
+        parent = current.parent
+        if parent == current:
+            return None
+        suffix.append(current.name)
+        current = parent
+
+
+def _root_paths_equivalent(declared: Path, resolved: Path) -> bool:
+    """Return True when a root spelling is safe to equate with ``resolved``.
+
+    Preconditions: the caller must have checked ``declared`` with
+    :func:`find_link_component` before calling this helper, and must check the
+    returned ``resolved`` path again before using it.  This helper is not a
+    standalone security validator.
+
+    Lexical equality is handled first.  On Windows, an alternate spelling is
+    accepted only when the OS long-name expansion equals ``resolved`` and, for
+    an existing root, ``samefile`` proves the same filesystem object.  A missing
+    root has no object identity to prove and is accepted after the alias and
+    link checks.  Any metadata or identity failure fails closed.
+    """
+
+    if paths_equivalent(declared, resolved):
+        return True
+    if os.name != "nt":
+        return False
+    try:
+        alias = _canonical_alias_path(declared)
+    except (OSError, ValueError):
+        return False
+    if alias is None or not paths_equivalent(alias, resolved):
+        return False
+    try:
+        declared.lstat()
+    except FileNotFoundError:
+        return True
+    except OSError:
+        return False
+    if is_link_like(declared):
+        return False
+    try:
+        return os.path.samefile(declared, resolved)
+    except OSError:
+        return False
 
 
 def find_link_component(path: Path) -> Path | None:

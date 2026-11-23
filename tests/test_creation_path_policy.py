@@ -28,7 +28,13 @@ def _make_junction(link: Path, target: Path) -> bool:
         text=True,
         check=False,
     )
-    return completed.returncode == 0 and os.path.isjunction(link)
+    if completed.returncode != 0:
+        return False
+    try:
+        status = os.lstat(link)
+    except OSError:
+        return False
+    return bool(getattr(status, "st_file_attributes", 0) & 0x400)
 
 
 @unittest.skipUnless(os.name == "nt", "Windows root-path policy tests")
