@@ -12,7 +12,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import chdir
+from contextlib import contextmanager
 from pathlib import Path
 
 from veyra_creation.errors import CreationError
@@ -20,6 +20,17 @@ from veyra_creation.store import ProjectStore
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+@contextmanager
+def _chdir(path: Path):
+    """Run a block with the process working directory set to *path*."""
+    previous = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(previous)
 
 
 class EmptyProjectPathTests(unittest.TestCase):
@@ -53,7 +64,7 @@ class EmptyProjectPathTests(unittest.TestCase):
         self.assertEqual(leftovers, [])
 
     def test_constructor_rejects_empty_string(self) -> None:
-        with chdir(self.cwd):
+        with _chdir(self.cwd):
             with self.assertRaises(CreationError) as caught:
                 ProjectStore("")
         self.assertEqual(caught.exception.code, "E_PROJECT_PATH_INVALID")
@@ -80,13 +91,13 @@ class EmptyProjectPathTests(unittest.TestCase):
         self._assert_no_creation(self.cwd)
 
     def test_constructor_dot_initializes(self) -> None:
-        with chdir(self.cwd):
+        with _chdir(self.cwd):
             store = ProjectStore(".")
             store.init(name="dot", pack_type="desktop_theme")
         self.assertTrue((self.cwd / "creation" / "state.json").is_file())
 
     def test_constructor_path_dot_initializes(self) -> None:
-        with chdir(self.cwd):
+        with _chdir(self.cwd):
             store = ProjectStore(Path("."))
             store.init(name="path-dot", pack_type="desktop_theme")
         self.assertTrue((self.cwd / "creation" / "state.json").is_file())

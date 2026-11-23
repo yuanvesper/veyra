@@ -53,3 +53,58 @@ jobs:
 
       - name: Check Bash installer syntax
         run: bash -n scripts/install.sh
+
+  windows-py310:
+    name: Windows Python 3.10 focused tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Run Python 3.10 compatibility tests
+        shell: pwsh
+        run: |
+          $output = & python -m unittest discover -s tests -p test_creation_empty_path.py -v 2>&1
+          $code = $LASTEXITCODE
+          $output | Write-Output
+          if ($code -ne 0) { exit $code }
+          if (($output | Out-String) -notmatch "Ran 9 tests") {
+            throw "Expected 9 empty-project-path tests"
+          }
+
+          $output = & python -m unittest discover -s tests -p test_creation_safewriter.py -v 2>&1
+          $code = $LASTEXITCODE
+          $output | Write-Output
+          if ($code -ne 0) { exit $code }
+          if (($output | Out-String) -notmatch "Ran 26 tests") {
+            throw "Expected 26 SafeWriter tests"
+          }
+          if (($output | Out-String) -match "SafeWriter uses Windows native file APIs") {
+            throw "SafeWriter tests were platform-skipped on Windows"
+          }
+
+  windows-native:
+    name: Windows native regression suite
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Python 3.10/3.11 lack os.path.isjunction, which the existing
+      # Windows junction tests require; that gap is outside this CI fix.
+      - name: Run unittest regression suite
+        env:
+          PYTHONUTF8: "1"
+        run: python -m unittest discover -s tests -v

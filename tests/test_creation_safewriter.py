@@ -21,6 +21,9 @@ from dataclasses import replace
 from pathlib import Path
 from unittest import mock
 
+if os.name != "nt":
+    raise unittest.SkipTest("SafeWriter uses Windows native file APIs")
+
 from veyra_creation.safewriter import (
     CreateRequest,
     ExpectedTarget,
